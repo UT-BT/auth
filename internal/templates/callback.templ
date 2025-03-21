@@ -1,0 +1,64 @@
+package templates
+
+templ Callback() {
+    @Base("Loading...") {
+        <h1 class="text-3xl font-bold">Logging in...</h1>
+        <p class="text-base-content/70">Please wait while we log you in.</p>
+        <div class="loading loading-spinner loading-lg text-primary"></div>
+
+        <script>
+            const hash = window.location.hash.substring(1);
+            if (hash) {
+                const params = {};
+                hash.split('&').forEach(pair => {
+                    const [key, value] = pair.split('=');
+                    params[key] = decodeURIComponent(value);
+                });
+
+                // Store tokens in localStorage temporarily
+                const expiresIn = parseInt(params.expires_in || '3600');
+                const expiresAt = Math.floor(Date.now() / 1000) + expiresIn;
+                
+                const clientTokens = {
+                    access_token: params.access_token,
+                    refresh_token: params.refresh_token,
+                    expires_at: expiresAt,
+                    provider_token: params.provider_token,
+                    provider_refresh_token: params.provider_refresh_token
+                };
+                localStorage.setItem('auth_tokens', JSON.stringify(clientTokens));
+
+                // Store auth tokens in cookies via API
+                fetch('/api/store-auth', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${params.access_token}`
+                    },
+                    body: JSON.stringify({
+                        refresh_token: params.refresh_token,
+                        provider_token: params.provider_token,
+                        provider_refresh_token: params.provider_refresh_token
+                    }),
+                    credentials: 'include'
+                }).then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to store auth tokens');
+                    }
+                    // Clean up localStorage after successful cookie storage
+                    localStorage.removeItem('auth_tokens');
+                    // Add a small delay to ensure cookies are set
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 500);
+                }).catch(error => {
+                    console.error('Failed to store auth tokens:', error);
+                    localStorage.removeItem('auth_tokens');
+                    window.location.href = '/?error=auth_storage_failed';
+                });
+            } else {
+                window.location.href = '/?error=no_auth_data';
+            }
+        </script>
+    }
+} 

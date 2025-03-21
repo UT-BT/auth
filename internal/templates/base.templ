@@ -1,0 +1,22 @@
+package templates
+
+templ Base(title string) {
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>UTBT.net - { title }</title>
+        <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://cdn.jsdelivr.net/npm/daisyui@4.7.2/dist/full.min.css" rel="stylesheet" type="text/css" />
+    </head>
+    <body class="min-h-screen bg-base-200 flex items-center justify-center p-4">
+        <div class="card w-full sm:w-[450px] xl:w-[30rem] 2xl:w-[35rem] bg-base-100 shadow-xl">
+            <div class="card-body items-center text-center space-y-6">
+                { children... }
+            </div>
+        </div>
+    </body>
+    </html>
+} 
