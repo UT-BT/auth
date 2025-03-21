@@ -3,26 +3,26 @@ package config
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
 // Config holds all configuration for the application
 type Config struct {
-	// Server config
 	Port        string
 	Environment string
 	AppURL      string
 
-	// Auth config
 	SupabaseURL        string
 	SupabaseInstance   string
 	SupabaseServiceKey string
 
-	// Security config
 	SuperUserDiscordID string
 	AdminRoleID        string
 	ModeratorRoleID    string
 	CookieDomain       string
+
+	LogDir string
 }
 
 // Load creates a new Config from environment variables
@@ -40,6 +40,8 @@ func Load() (*Config, error) {
 		AdminRoleID:        os.Getenv("ADMIN_ROLE_ID"),
 		ModeratorRoleID:    os.Getenv("MODERATOR_ROLE_ID"),
 		CookieDomain:       getCookieDomain(getEnvOrDefault("ENV", "development")),
+
+		LogDir: getEnvOrDefault("LOG_DIR", filepath.Join(".", "logs")),
 	}
 
 	if err := cfg.Validate(); err != nil {

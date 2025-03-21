@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/UT-BT/auth/internal/config"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -21,6 +22,7 @@ type CookieManager struct {
 
 // NewCookieManager creates a new CookieManager instance
 func NewCookieManager(cfg *config.Config) *CookieManager {
+	log.Debug().Msg("Initializing cookie manager")
 	return &CookieManager{
 		config: cfg,
 	}
@@ -28,18 +30,25 @@ func NewCookieManager(cfg *config.Config) *CookieManager {
 
 // SetAuthCookies sets all authentication-related cookies
 func (cm *CookieManager) SetAuthCookies(w http.ResponseWriter, token *TokenResponse) {
+	log.Debug().Str("access_token", token.AccessToken).Str("refresh_token", token.RefreshToken).Msg("Setting authentication cookies")
 	cm.setSecureCookie(w, accessTokenCookie, token.AccessToken, time.Hour)
 	cm.setSecureCookie(w, refreshTokenCookie, token.RefreshToken, 30*24*time.Hour)
+	log.Debug().Str("access_token", token.AccessToken).Str("refresh_token", token.RefreshToken).Msg("Authentication cookies set successfully")
 }
 
 // SetProviderCookies sets provider-specific cookies
 func (cm *CookieManager) SetProviderCookies(w http.ResponseWriter, providerToken, providerRefreshToken string) {
-	cm.setSecureCookie(w, providerTokenCookie, providerToken, time.Hour)
-	cm.setSecureCookie(w, providerRefreshTokenCookie, providerRefreshToken, 30*24*time.Hour)
+	// Max age is 30 days in Time Duration
+	maxAge := 30 * 24 * time.Hour
+	log.Debug().Str("provider_token", providerToken).Str("provider_refresh_token", providerRefreshToken).Dur("max_age", maxAge).Msg("Setting provider cookies")
+	cm.setSecureCookie(w, providerTokenCookie, providerToken, maxAge)
+	cm.setSecureCookie(w, providerRefreshTokenCookie, providerRefreshToken, maxAge)
+	log.Debug().Str("provider_token", providerToken).Str("provider_refresh_token", providerRefreshToken).Dur("max_age", maxAge).Msg("Provider cookies set successfully")
 }
 
 // ClearAllAuthCookies removes all authentication-related cookies
 func (cm *CookieManager) ClearAllAuthCookies(w http.ResponseWriter) {
+	log.Debug().Msg("Clearing all authentication cookies")
 	cookies := []string{
 		accessTokenCookie,
 		refreshTokenCookie,
@@ -50,27 +59,35 @@ func (cm *CookieManager) ClearAllAuthCookies(w http.ResponseWriter) {
 	for _, name := range cookies {
 		cm.clearCookie(w, name)
 	}
+	log.Debug().Msg("All authentication cookies cleared")
 }
 
 // GetAccessToken retrieves the access token from cookies
 func (cm *CookieManager) GetAccessToken(r *http.Request) (string, error) {
+	log.Debug().Msg("Retrieving access token from cookies")
 	cookie, err := r.Cookie(accessTokenCookie)
 	if err != nil {
+		log.Warn().Err(err).Msg("Failed to get access token cookie")
 		return "", err
 	}
+	log.Debug().Str("access_token", cookie.Value).Msg("Successfully retrieved access token from cookies")
 	return cookie.Value, nil
 }
 
 // GetRefreshToken retrieves the refresh token from cookies
 func (cm *CookieManager) GetRefreshToken(r *http.Request) (string, error) {
+	log.Debug().Msg("Retrieving refresh token from cookies")
 	cookie, err := r.Cookie(refreshTokenCookie)
 	if err != nil {
+		log.Warn().Err(err).Msg("Failed to get refresh token cookie")
 		return "", err
 	}
+	log.Debug().Str("refresh_token", cookie.Value).Msg("Successfully retrieved refresh token from cookies")
 	return cookie.Value, nil
 }
 
 func (cm *CookieManager) setSecureCookie(w http.ResponseWriter, name, value string, maxAge time.Duration) {
+	log.Debug().Str("cookie_name", name).Dur("max_age", maxAge).Msg("Setting secure cookie")
 	http.SetCookie(w, &http.Cookie{
 		Name:     name,
 		Value:    value,
@@ -81,9 +98,11 @@ func (cm *CookieManager) setSecureCookie(w http.ResponseWriter, name, value stri
 		Secure:   !cm.config.IsLocal(),
 		SameSite: http.SameSiteLaxMode,
 	})
+	log.Debug().Str("cookie_name", name).Msg("Secure cookie set successfully")
 }
 
 func (cm *CookieManager) clearCookie(w http.ResponseWriter, name string) {
+	log.Debug().Str("cookie_name", name).Msg("Clearing cookie")
 	http.SetCookie(w, &http.Cookie{
 		Name:     name,
 		Value:    "",
@@ -94,4 +113,5 @@ func (cm *CookieManager) clearCookie(w http.ResponseWriter, name string) {
 		Secure:   !cm.config.IsLocal(),
 		SameSite: http.SameSiteLaxMode,
 	})
+	log.Debug().Str("cookie_name", name).Msg("Cookie cleared successfully")
 }

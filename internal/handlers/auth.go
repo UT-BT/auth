@@ -13,12 +13,14 @@ import (
 )
 
 type AuthHandler struct {
-	authClient *auth.Client
+	authClient    *auth.Client
+	cookieManager *auth.CookieManager
 }
 
-func NewAuthHandler(authClient *auth.Client) *AuthHandler {
+func NewAuthHandler(authClient *auth.Client, cookieManager *auth.CookieManager) *AuthHandler {
 	return &AuthHandler{
-		authClient: authClient,
+		authClient:    authClient,
+		cookieManager: cookieManager,
 	}
 }
 
@@ -50,7 +52,7 @@ func (h *AuthHandler) indexPage(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.getUserFromCookies(w, r)
 	if err != nil {
-		h.clearAuthCookies(w, r)
+		h.cookieManager.ClearAllAuthCookies(w)
 		templates.Index(nil).Render(r.Context(), w)
 		return
 	}
@@ -59,46 +61,27 @@ func (h *AuthHandler) indexPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AuthHandler) logoutPage(w http.ResponseWriter, r *http.Request) {
-	h.clearAuthCookies(w, r)
+	h.cookieManager.ClearAllAuthCookies(w)
 	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 }
 
 func (h *AuthHandler) getUserFromCookies(w http.ResponseWriter, r *http.Request) (*templates.User, error) {
-	accessToken, err := r.Cookie("access_token")
+	accessToken, err := h.cookieManager.GetAccessToken(r)
 	if err != nil {
-		refreshToken, err := r.Cookie("refresh_token")
+		refreshToken, err := h.cookieManager.GetRefreshToken(r)
 		if err != nil {
 			return nil, err
 		}
 
-		token, err := h.authClient.RefreshToken(refreshToken.Value)
+		token, err := h.authClient.RefreshToken(refreshToken)
 		if err != nil {
 			return nil, err
 		}
 
-		domain := ".utbt.net"
-		if h.authClient.IsLocalEnvironment() {
-			domain = "localhost"
-		}
-
-		http.SetCookie(w, &http.Cookie{
-			Name:     "access_token",
-			Value:    token.AccessToken,
-			Domain:   domain,
-			Path:     "/",
-			MaxAge:   token.ExpiresIn,
-			HttpOnly: true,
-			Secure:   true,
-			SameSite: http.SameSiteLaxMode,
-		})
-
-		accessToken = &http.Cookie{
-			Name:  "access_token",
-			Value: token.AccessToken,
-		}
+		h.cookieManager.SetAuthCookies(w, token)
 	}
 
-	user, err := h.authClient.GetUserFromToken(accessToken.Value)
+	user, err := h.authClient.GetUserFromToken(accessToken)
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +90,7 @@ func (h *AuthHandler) getUserFromCookies(w http.ResponseWriter, r *http.Request)
 	for i, identity := range user.Identities {
 		if identity.Provider == "discord" {
 			discordIdentityIndex = i
-			break // Exit loop once found
+			break
 		}
 	}
 
@@ -221,7 +204,7 @@ func (h *AuthHandler) logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.clearAuthCookies(w, r)
+	h.cookieManager.ClearAllAuthCookies(w)
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -232,62 +215,6 @@ func (h *AuthHandler) discordLogin(w http.ResponseWriter, r *http.Request) {
 
 func (h *AuthHandler) discordCallback(w http.ResponseWriter, r *http.Request) {
 	templates.Callback().Render(r.Context(), w)
-}
-
-func (h *AuthHandler) setAuthCookies(w http.ResponseWriter, token *auth.TokenResponse) {
-	domain := ".utbt.net"
-	if h.authClient.IsLocalEnvironment() {
-		domain = "localhost"
-	}
-
-	http.SetCookie(w, &http.Cookie{
-		Name:     "access_token",
-		Value:    token.AccessToken,
-		Domain:   domain,
-		Path:     "/",
-		MaxAge:   3600, // 1 hour
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteLaxMode,
-	})
-
-	http.SetCookie(w, &http.Cookie{
-		Name:     "refresh_token",
-		Value:    token.RefreshToken,
-		Domain:   domain,
-		Path:     "/",
-		MaxAge:   30 * 24 * 60 * 60, // 30 days
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteLaxMode,
-	})
-}
-
-func (h *AuthHandler) clearAuthCookies(w http.ResponseWriter, r *http.Request) {
-	domain := ".utbt.net"
-	if h.authClient.IsLocalEnvironment() {
-		domain = "localhost"
-	}
-
-	cookies := []string{
-		"access_token",
-		"refresh_token",
-		"provider_token",
-		"provider_refresh_token",
-	}
-
-	for _, name := range cookies {
-		http.SetCookie(w, &http.Cookie{
-			Name:     name,
-			Value:    "",
-			Domain:   domain,
-			Path:     "/",
-			MaxAge:   -1,
-			HttpOnly: true,
-			Secure:   true,
-			SameSite: http.SameSiteLaxMode,
-		})
-	}
 }
 
 type StoreAuthRequest struct {
