@@ -9,8 +9,12 @@ type User struct {
 templ Index(user *User) {
     if user == nil {
         @Base("Login") {
+            <div class="utbt-logo">
+                <div class="w-24 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
+                    <img src="/static/brands/utbt/utbt-circle-animated.gif" alt="UTBT Logo" class="rounded-full" />
+                </div>
+            </div>
             <h1 class="text-3xl font-bold">Welcome to UTBT</h1>
-            <p class="text-base-content/70">Login with your Discord account to access UTBT.</p>
             <div class="w-full">
                 <a 
                     href="/discord"
