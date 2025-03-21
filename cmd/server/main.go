@@ -17,6 +17,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+var version string
+
 func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Warn().Err(err).Msg("Warning: Error loading .env file")
@@ -34,8 +36,8 @@ func main() {
 		log.Fatal().Err(err).Msg("Error initializing logger")
 	}
 
+	log.Info().Str("version", version).Msgf("UTBT Auth Server")
 	log.Info().
-		Str("environment", cfg.Environment).
 		Str("port", cfg.Port).
 		Msg("Starting server")
 

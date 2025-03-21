@@ -64,17 +64,37 @@ cp .env.example .env
 ```
 
 ## Building and Running
+### CLI Tools
 
-### Development Mode
-```bash
-go run cmd/server/main.go
+The project includes cross-platform CLI tools in the `scripts/` directory to simplify development workflows:
+
+### Windows (PowerShell)
+```powershell
+.\scripts\auth.ps1 <command>
 ```
 
-### Production Build
+### Unix/Linux/macOS
 ```bash
-go build -o auth cmd/server/main.go
-./auth
+./scripts/auth <command>
 ```
+
+### Windows (Batch)
+```batch
+.\scripts\auth.bat <command>
+```
+
+Available commands:
+- `build` - Build the server executable with version information
+- `run` - Run the server (automatically builds if needed)
+- `dev` - Clean, build, and run the server in development mode
+- `test` - Run all tests
+- `clean` - Clean build artifacts and dependencies
+- `help` - Show help message
+
+The CLI tools provide:
+- Automatic version tagging based on git commit hash
+- Cross-platform support
+- Simplified development workflow
 
 ## API Endpoints
 
