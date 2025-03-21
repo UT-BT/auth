@@ -46,10 +46,11 @@ func main() {
 
 	// Add request ID middleware
 	r.Use(chiMiddleware.RequestID)
-	// Add our custom logger middleware
-	r.Use(middleware.Logger)
 	r.Use(chiMiddleware.Recoverer)
 	r.Use(chiMiddleware.RealIP)
+
+	// Add our custom logger middleware
+	r.Use(middleware.Logger)
 
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"https://*.utbt.net", "http://localhost:*", "http://127.0.0.1:*"},
