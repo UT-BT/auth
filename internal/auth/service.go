@@ -40,12 +40,16 @@ func (c *Client) RefreshToken(refreshToken string) (*TokenResponse, error) {
 func (c *Client) GetUserFromToken(token string) (*types.UserResponse, error) {
 	log.Debug().Str("token", token).Msg("Attempting to get user from token")
 	if len(token) < 10 {
-		log.Warn().Msg("Invalid token format: token too short")
+		if token == "" {
+			log.Debug().Msg("Token is empty")
+		} else {
+			log.Info().Msg("Invalid token format: token too short")
+		}
 		return nil, errors.New("invalid token format: token too short")
 	}
 
 	if !strings.HasPrefix(token, "ey") {
-		log.Warn().Msg("Invalid token format: not a JWT")
+		log.Info().Msg("Invalid token format: not a JWT")
 		return nil, errors.New("invalid token format: not a JWT")
 	}
 

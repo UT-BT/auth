@@ -67,7 +67,7 @@ func (cm *CookieManager) GetAccessToken(r *http.Request) (string, error) {
 	log.Debug().Msg("Retrieving access token from cookies")
 	cookie, err := r.Cookie(accessTokenCookie)
 	if err != nil {
-		log.Warn().Err(err).Msg("Failed to get access token cookie")
+		log.Debug().Err(err).Msg("Failed to get access token cookie")
 		return "", err
 	}
 	log.Debug().Str("access_token", cookie.Value).Msg("Successfully retrieved access token from cookies")
@@ -79,7 +79,7 @@ func (cm *CookieManager) GetRefreshToken(r *http.Request) (string, error) {
 	log.Debug().Msg("Retrieving refresh token from cookies")
 	cookie, err := r.Cookie(refreshTokenCookie)
 	if err != nil {
-		log.Warn().Err(err).Msg("Failed to get refresh token cookie")
+		log.Debug().Err(err).Msg("Failed to get refresh token cookie")
 		return "", err
 	}
 	log.Debug().Str("refresh_token", cookie.Value).Msg("Successfully retrieved refresh token from cookies")
