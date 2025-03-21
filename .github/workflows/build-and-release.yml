@@ -88,7 +88,15 @@ jobs:
         run: |
           BADGE_URL="https://img.shields.io/badge/Auth-v${{ github.event.inputs.version }}-blue"
           BADGE_MARKDOWN="[![Auth Release]($BADGE_URL)](https://github.com/UT-BT/auth/releases/tag/auth-v${{ github.event.inputs.version }})"
-          sed -i "/^\\[!\\[Auth Release\\]/c\\$BADGE_MARKDOWN" README.md
+          
+          # Check if badge exists
+          if grep -q "^\[!\[Auth Release\]" README.md; then
+            # Update existing badge
+            sed -i "/^\[!\[Auth Release\]/c\\$BADGE_MARKDOWN" README.md
+          else
+            # Add new badge after the title
+            sed -i "/^# UTBT Auth/a\\\n$BADGE_MARKDOWN\n" README.md
+          fi
 
       - name: Commit README Update
         run: |
@@ -96,7 +104,7 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git pull
           git add README.md
-          git commit -m "Update README with latest Auth release badge"
+          git commit -m "Update README with latest Auth release badge" || exit 0
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
