@@ -67,6 +67,9 @@ func main() {
 
 	fileServer := http.FileServer(http.Dir("static"))
 	r.Handle("/static/*", http.StripPrefix("/static/", fileServer))
+	r.Handle("/favicon.ico", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "static/favicon.ico")
+	}))
 	log.Debug().Msg("Static file server configured")
 
 	cookieManager := auth.NewCookieManager(cfg)
