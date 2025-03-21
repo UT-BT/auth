@@ -1,0 +1,102 @@
+name: Build and Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version for the release (e.g., 1.0.0)'
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: '1.23'
+
+      - name: Install Dependencies
+        run: go mod tidy
+
+      - name: Create Bin Directory
+        run: mkdir -p ./bin
+
+      - name: Build for Linux (amd64)
+        run: |
+          GOOS=linux GOARCH=amd64 go build -ldflags "-X main.version=${{ github.event.inputs.version }}" -o ./bin/auth-${{ github.event.inputs.version }}-linux-amd64 ./cmd/server
+
+      - name: Build for Linux (arm)
+        run: |
+          GOOS=linux GOARCH=arm go build -ldflags "-X main.version=${{ github.event.inputs.version }}" -o ./bin/auth-${{ github.event.inputs.version }}-linux-arm ./cmd/server
+
+      - name: Build for Linux (x86)
+        run: |
+          GOOS=linux GOARCH=386 go build -ldflags "-X main.version=${{ github.event.inputs.version }}" -o ./bin/auth-${{ github.event.inputs.version }}-linux-x86 ./cmd/server
+
+      - name: Build for Windows (amd64)
+        run: |
+          GOOS=windows GOARCH=amd64 go build -ldflags "-X main.version=${{ github.event.inputs.version }}" -o ./bin/auth-${{ github.event.inputs.version }}.exe ./cmd/server
+
+      - name: Get Commits Since Last Release
+        id: get_commits
+        run: |
+          git fetch --prune --unshallow --tags
+          
+          if last_tag=$(git describe --tags --abbrev=0 --match="auth-v*"); then
+            echo "Found tag: $last_tag"
+          else
+            last_tag="first_release"
+            echo "No matching tag found. Setting last_tag to: $last_tag"
+          fi
+          
+          if [ "$last_tag" != "first_release" ]; then
+            COMMIT_MESSAGES=$(git log "$last_tag"..HEAD --pretty=format:"%h - %s" --grep="(auth)")
+          else
+            COMMIT_MESSAGES=$(git log --pretty=format:"%h - %s" --grep="(auth)")
+          fi
+          
+          printf "COMMIT_MESSAGES<<EOF\n%s\nEOF\n" "$COMMIT_MESSAGES" >> $GITHUB_ENV
+
+      - name: Tag the Release
+        run: |
+          git tag auth-v${{ github.event.inputs.version }}
+          git push origin auth-v${{ github.event.inputs.version }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: auth-v${{ github.event.inputs.version }}
+          files: |
+            ./bin/auth-${{ github.event.inputs.version }}-linux-amd64
+            ./bin/auth-${{ github.event.inputs.version }}-linux-arm
+            ./bin/auth-${{ github.event.inputs.version }}-linux-x86
+            ./bin/auth-${{ github.event.inputs.version }}.exe
+          body: |
+            ## Changes since last release
+            ${{ env.COMMIT_MESSAGES }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update README with Latest Release Badge
+        run: |
+          BADGE_URL="https://img.shields.io/badge/Auth-v${{ github.event.inputs.version }}-blue"
+          BADGE_MARKDOWN="[![Auth Release]($BADGE_URL)](https://github.com/UT-BT/auth/releases/tag/auth-v${{ github.event.inputs.version }})"
+          sed -i "/^\\[!\\[Auth Release\\]/c\\$BADGE_MARKDOWN" README.md
+
+      - name: Commit README Update
+        run: |
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git pull
+          git add README.md
+          git commit -m "Update README with latest Auth release badge"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
