@@ -104,7 +104,7 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git pull
           git add README.md
-          git commit -m "Update README with latest Auth release badge" || exit 0
+          git commit -m "chore: update readme with v${{ github.event.inputs.version }} release badge" || exit 0
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
