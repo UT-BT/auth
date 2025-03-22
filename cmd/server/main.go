@@ -9,7 +9,7 @@ import (
 	"github.com/UT-BT/auth/internal/handlers"
 	"github.com/UT-BT/auth/internal/logger"
 	"github.com/UT-BT/auth/internal/middleware"
-
+	"github.com/UT-BT/auth/internal/supabase"
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
@@ -73,7 +73,9 @@ func main() {
 	log.Debug().Msg("Static file server configured")
 
 	cookieManager := auth.NewCookieManager(cfg)
-	authHandler := handlers.NewAuthHandler(authClient, cookieManager)
+	supabaseRepository := supabase.NewRepository(cfg.SupabaseURL, cfg.SupabaseServiceKey)
+	supabaseService := supabase.NewService(supabaseRepository)
+	authHandler := handlers.NewAuthHandler(authClient, cookieManager, supabaseService)
 	r.Mount("/", authHandler.Routes())
 	log.Debug().Msg("Routes mounted")
 

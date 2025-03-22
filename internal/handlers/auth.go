@@ -7,8 +7,10 @@ import (
 	"strings"
 
 	"github.com/UT-BT/auth/internal/auth"
+	"github.com/UT-BT/auth/internal/supabase"
 	"github.com/UT-BT/auth/internal/templates"
 	"github.com/UT-BT/auth/internal/types"
+	"github.com/rs/zerolog/log"
 	supabasetypes "github.com/supabase-community/auth-go/types"
 
 	"github.com/go-chi/chi/v5"
@@ -16,14 +18,16 @@ import (
 
 // AuthHandler handles authentication-related HTTP requests
 type AuthHandler struct {
-	authClient    *auth.Client
-	cookieManager *auth.CookieManager
+	authClient      *auth.Client
+	cookieManager   *auth.CookieManager
+	supabaseService supabase.Service
 }
 
-func NewAuthHandler(authClient *auth.Client, cookieManager *auth.CookieManager) *AuthHandler {
+func NewAuthHandler(authClient *auth.Client, cookieManager *auth.CookieManager, supabaseService supabase.Service) *AuthHandler {
 	return &AuthHandler{
-		authClient:    authClient,
-		cookieManager: cookieManager,
+		authClient:      authClient,
+		cookieManager:   cookieManager,
+		supabaseService: supabaseService,
 	}
 }
 
@@ -54,10 +58,36 @@ func (h *AuthHandler) indexPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user, err := h.getUserFromCookies(w, r)
+	// User not logged in
 	if err != nil {
 		h.cookieManager.ClearAllAuthCookies(w)
+
+		hwid := r.URL.Query().Get("hwid")
+		if hwid != "" {
+			h.cookieManager.SetPendingHWID(w, hwid)
+		}
+
 		templates.Index(nil).Render(r.Context(), w)
 		return
+	}
+
+	// User is logged in
+	var bHwidFound bool = false
+
+	hwid := r.URL.Query().Get("hwid")
+	if hwid != "" {
+		h.supabaseService.RegisterHWID(user, hwid)
+		bHwidFound = true
+	}
+
+	if !bHwidFound {
+		pendingHWID, err := h.cookieManager.GetPendingHWID(r)
+		if err != nil {
+			log.Debug().Msg("Failed to get pending HWID")
+		} else if pendingHWID != "" {
+			h.supabaseService.RegisterHWID(user, pendingHWID)
+			h.cookieManager.ClearPendingHWID(w)
+		}
 	}
 
 	templates.Index(user).Render(r.Context(), w)
@@ -144,9 +174,10 @@ func (h *AuthHandler) getUserFromCookies(w http.ResponseWriter, r *http.Request)
 	}
 
 	return &types.User{
-		ID:        identity.ID,
-		Username:  discordUsername,
-		AvatarURL: avatarURL,
+		ID:            supabaseUser.ID.String(),
+		DiscordUserID: identity.ID,
+		Username:      discordUsername,
+		AvatarURL:     avatarURL,
 	}, nil
 }
 

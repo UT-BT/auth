@@ -13,6 +13,7 @@ const (
 	refreshTokenCookie         = "refresh_token"
 	providerTokenCookie        = "provider_token"
 	providerRefreshTokenCookie = "provider_refresh_token"
+	pendingHWIDCookie          = "pending_hwid"
 )
 
 // CookieManager handles all cookie-related operations
@@ -46,6 +47,13 @@ func (cm *CookieManager) SetProviderCookies(w http.ResponseWriter, providerToken
 	log.Debug().Str("provider_token", providerToken).Str("provider_refresh_token", providerRefreshToken).Dur("max_age", maxAge).Msg("Provider cookies set successfully")
 }
 
+// SetPendingHWID sets the pending HWID cookie
+func (cm *CookieManager) SetPendingHWID(w http.ResponseWriter, hwid string) {
+	log.Debug().Str("hwid", hwid).Msg("Setting pending HWID")
+	cm.setSecureCookie(w, pendingHWIDCookie, hwid, 30*24*time.Hour)
+	log.Debug().Str("hwid", hwid).Msg("Pending HWID set successfully")
+}
+
 // ClearAllAuthCookies removes all authentication-related cookies
 func (cm *CookieManager) ClearAllAuthCookies(w http.ResponseWriter) {
 	log.Debug().Msg("Clearing all authentication cookies")
@@ -60,6 +68,13 @@ func (cm *CookieManager) ClearAllAuthCookies(w http.ResponseWriter) {
 		cm.clearCookie(w, name)
 	}
 	log.Debug().Msg("All authentication cookies cleared")
+}
+
+// ClearPendingHWID removes the pending HWID cookie
+func (cm *CookieManager) ClearPendingHWID(w http.ResponseWriter) {
+	log.Debug().Msg("Clearing pending HWID")
+	cm.clearCookie(w, pendingHWIDCookie)
+	log.Debug().Msg("Pending HWID cleared")
 }
 
 // GetAccessToken retrieves the access token from cookies
@@ -83,6 +98,18 @@ func (cm *CookieManager) GetRefreshToken(r *http.Request) (string, error) {
 		return "", err
 	}
 	log.Debug().Str("refresh_token", cookie.Value).Msg("Successfully retrieved refresh token from cookies")
+	return cookie.Value, nil
+}
+
+// GetPendingHWID retrieves the pending HWID from cookies
+func (cm *CookieManager) GetPendingHWID(r *http.Request) (string, error) {
+	log.Debug().Msg("Retrieving pending HWID from cookies")
+	cookie, err := r.Cookie(pendingHWIDCookie)
+	if err != nil {
+		log.Debug().Err(err).Msg("Failed to get pending HWID cookie")
+		return "", err
+	}
+	log.Debug().Str("pending_hwid", cookie.Value).Msg("Successfully retrieved pending HWID from cookies")
 	return cookie.Value, nil
 }
 
