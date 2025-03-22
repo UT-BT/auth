@@ -8,10 +8,13 @@ import (
 
 	"github.com/UT-BT/auth/internal/auth"
 	"github.com/UT-BT/auth/internal/templates"
+	"github.com/UT-BT/auth/internal/types"
+	supabasetypes "github.com/supabase-community/auth-go/types"
 
 	"github.com/go-chi/chi/v5"
 )
 
+// AuthHandler handles authentication-related HTTP requests
 type AuthHandler struct {
 	authClient    *auth.Client
 	cookieManager *auth.CookieManager
@@ -65,41 +68,7 @@ func (h *AuthHandler) logoutPage(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 }
 
-func (h *AuthHandler) getUserFromCookies(w http.ResponseWriter, r *http.Request) (*templates.User, error) {
-	accessToken, err := h.cookieManager.GetAccessToken(r)
-	if err != nil {
-		refreshToken, err := h.cookieManager.GetRefreshToken(r)
-		if err != nil {
-			return nil, err
-		}
-
-		token, err := h.authClient.RefreshToken(refreshToken)
-		if err != nil {
-			return nil, err
-		}
-
-		h.cookieManager.SetAuthCookies(w, token)
-	}
-
-	user, err := h.authClient.GetUserFromToken(accessToken)
-	if err != nil {
-		return nil, err
-	}
-
-	discordIdentityIndex := -1
-	for i, identity := range user.Identities {
-		if identity.Provider == "discord" {
-			discordIdentityIndex = i
-			break
-		}
-	}
-
-	if discordIdentityIndex == -1 {
-		return nil, errors.New("no discord identity found")
-	}
-
-	identity := user.Identities[discordIdentityIndex]
-
+func extractDiscordUsername(identity *supabasetypes.Identity) string {
 	var discordUsername string
 
 	if customClaims, ok := identity.IdentityData["custom_claims"].(map[string]interface{}); ok {
@@ -128,14 +97,53 @@ func (h *AuthHandler) getUserFromCookies(w http.ResponseWriter, r *http.Request)
 		discordUsername = "Unknown Discord User"
 	}
 
+	return discordUsername
+}
+
+func (h *AuthHandler) getUserFromCookies(w http.ResponseWriter, r *http.Request) (*types.User, error) {
+	accessToken, err := h.cookieManager.GetAccessToken(r)
+	if err != nil {
+		refreshToken, err := h.cookieManager.GetRefreshToken(r)
+		if err != nil {
+			return nil, err
+		}
+
+		token, err := h.authClient.RefreshToken(refreshToken)
+		if err != nil {
+			return nil, err
+		}
+
+		h.cookieManager.SetAuthCookies(w, token)
+	}
+
+	supabaseUser, err := h.authClient.GetUserFromToken(accessToken)
+	if err != nil {
+		return nil, err
+	}
+
+	discordIdentityIndex := -1
+	for i, identity := range supabaseUser.Identities {
+		if identity.Provider == "discord" {
+			discordIdentityIndex = i
+			break
+		}
+	}
+
+	if discordIdentityIndex == -1 {
+		return nil, errors.New("no discord identity found")
+	}
+
+	identity := supabaseUser.Identities[discordIdentityIndex]
+	discordUsername := extractDiscordUsername(&identity)
+
 	avatarURL := ""
-	if user.UserMetadata != nil {
-		if avatar, ok := user.UserMetadata["avatar_url"].(string); ok {
+	if supabaseUser.UserMetadata != nil {
+		if avatar, ok := supabaseUser.UserMetadata["avatar_url"].(string); ok {
 			avatarURL = avatar
 		}
 	}
 
-	return &templates.User{
+	return &types.User{
 		ID:        identity.ID,
 		Username:  discordUsername,
 		AvatarURL: avatarURL,
