@@ -1,12 +1,8 @@
 package templates
 
-type User struct {
-    ID string
-    Username string
-    AvatarURL string
-}
+import "github.com/UT-BT/auth/internal/types"
 
-templ Index(user *User) {
+templ Index(user *types.User) {
     if user == nil {
         @Base("Login") {
             <div class="utbt-logo">
