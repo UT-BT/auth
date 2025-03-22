@@ -16,10 +16,8 @@ func Logger(next http.Handler) http.Handler {
 		// Create a custom response writer to capture the status code
 		ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
 
-		// Process request
 		next.ServeHTTP(ww, r)
 
-		// Log the request details
 		log.Debug().
 			Str("method", r.Method).
 			Str("path", r.URL.Path).
