@@ -22,8 +22,41 @@ Authentication service built with Go, providing Discord-based authentication and
 - [Supabase](https://supabase.com/) account and project
 - Discord Developer account and application
 - Environment variables configuration (see [Configuration](#configuration))
+- Git (for cloning the repository)
+
+> Note: The project includes a bootstrap script that will help verify and set up these prerequisites automatically.
 
 ## Configuration
+
+### Supabase Configuration
+
+#### Discord Authentication Setup
+
+You'll need your Discord application's client ID and secret, which you can get from the Discord Developer Portal.
+
+1. In your Supabase project dashboard, navigate to Authentication > Providers
+2. Find Discord in the list and enable it
+3. Configure the following settings:
+   - Client ID: Your Discord application's client ID
+   - Client Secret: Your Discord application's client secret
+   - Redirect URL: `https://<your-supabase-project>.supabase.co/auth/v1/callback`
+
+#### Supabase Project Settings
+
+1. In your Supabase project dashboard, go to Authentication > URL Configuration
+2. Set the following:
+   - Site URL: Your application's URL (e.g., `http://localhost:8080` for development)
+   - Redirect URLs: Add your application's callback URL
+     - Development: `http://localhost:8080/callback`
+     - Production: `https://your-domain.com/callback`
+
+#### Disable Email Authentication
+
+1. In your Supabase project dashboard, go to Authentication > Providers
+2. Find Email in the list and disable it
+3. This ensures users can only authenticate through Discord
+
+### Auth Server Config
 
 Create a `.env` file in the root directory with the following variables:
 
@@ -55,18 +88,30 @@ git clone https://github.com/UT-BT/auth.git
 cd auth
 ```
 
-2. Install dependencies:
-```bash
-go mod download
+2. Run the bootstrap script to set up your development environment:
+
+### Windows
+```powershell
+.\scripts\bootstrap.bat
 ```
 
-3. Set up your environment variables:
+### Unix/Linux/macOS
 ```bash
-cp .env.example .env
-# Edit .env with your configuration values
+./scripts/bootstrap
 ```
+
+The bootstrap script will:
+- Verify Go and Git are installed
+- Check Go version compatibility
+- Install templ if not present
+- Set up Go dependencies
+- Create a default `.env` file if it doesn't exist
+
+3. Update the `.env` file with your configuration values (see [Configuration](#configuration) section)
 
 ## Building and Running
+> Any *.templ file changes/additions require regeneration. 
+> This is handled through our CLI, but can also be done manually with templ generate.
 ### CLI Tools
 
 The project includes cross-platform CLI tools in the `scripts/` directory to simplify development workflows:

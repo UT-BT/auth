@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+BOLD='\033[1m'
+
+check_command() {
+    if ! command -v $1 &> /dev/null; then
+        echo -e "${RED}Error:${NC} $1 is not installed"
+        return 1
+    fi
+    return 0
+}
+
+check_go_version() {
+    local required_version="1.23"
+    local go_version=$(go version | awk '{print $3}' | sed 's/go//')
+    
+    if [ "$(printf '%s\n' "$required_version" "$go_version" | sort -V | head -n1)" != "$required_version" ]; then
+        echo -e "${RED}Error:${NC} Go version $required_version or higher is required"
+        echo -e "Current version: ${YELLOW}$go_version${NC}"
+        return 1
+    fi
+    return 0
+}
+
+install_templ() {
+    echo -e "${BOLD}Installing templ...${NC}"
+    go install github.com/a-h/templ/cmd/templ@latest
+    echo -e "${GREEN}✓${NC} templ installed successfully - make sure your Go bin is in your PATH"
+}
+
+setup_go_deps() {
+    echo -e "${BOLD}Setting up Go dependencies...${NC}"
+    go mod download
+    go mod tidy
+}
+
+create_env_file() {
+    if [ ! -f ".env" ]; then
+        echo -e "${BOLD}Creating .env file...${NC}"
+        cat > .env << EOL
+# Server Configuration
+PORT=8080
+ENV=development
+
+# Supabase Configuration
+SUPABASE_URL=your_supabase_url
+SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+
+# Logging Configuration
+LOG_LEVEL=debug
+LOG_FILE=logs/app.log
+EOL
+        echo -e "${YELLOW}Please update the .env file with your actual configuration values${NC}"
+    fi
+}
+
+main() {
+    echo -e "${BOLD}Starting development environment setup...${NC}\n"
+
+    # Check for required tools
+    echo -e "${BOLD}Checking required tools...${NC}"
+    if ! check_command "go"; then
+        echo -e "${RED}Please install Go from https://golang.org/doc/install${NC}"
+        exit 1
+    fi
+
+    if ! check_command "git"; then
+        echo -e "${RED}Please install Git from https://git-scm.com/downloads${NC}"
+        exit 1
+    fi
+
+    # Check Go version
+    if ! check_go_version; then
+        echo -e "${RED}Please upgrade your Go installation${NC}"
+        exit 1
+    fi
+
+    # Install templ if not present
+    if ! check_command "templ"; then
+        install_templ
+    fi
+
+    # Setup Go dependencies
+    setup_go_deps
+
+    # Create environment file if needed
+    create_env_file
+
+    echo -e "\n${GREEN}✓${NC} Development environment setup complete!"
+    echo -e "\n${BOLD}Next steps:${NC}"
+    echo -e "1. Update the ${YELLOW}.env${NC} file with your configuration"
+    echo -e "2. Run ${YELLOW}./scripts/auth dev${NC} to start the development server"
+}
+
+main 
