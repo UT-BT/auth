@@ -168,25 +168,6 @@ The CLI tools provide:
 - Real IP detection
 - Structured error handling
 
-## Project Structure
-
-```
-.
-├── cmd/
-│   └── server/          # Application entry point
-├── internal/
-│   ├── auth/           # Authentication logic
-│   ├── config/         # Configuration management
-│   ├── handlers/       # HTTP request handlers
-│   ├── logger/         # Logging configuration
-│   ├── middleware/     # HTTP middleware
-│   └── templates/      # HTML templates
-├── static/             # Static web assets
-├── .env.example        # Example environment variables
-├── go.mod              # Go module definition
-├── go.sum              # Go module checksums
-└── LICENSE            # License information
-```
 
 ## Dependencies
 
