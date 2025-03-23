@@ -26,3 +26,18 @@ go.work.sum
 
 *.log
 ./logs/*
+
+# Supabase
+**/supabase/.temp/
+**/supabase/.branches/
+**/supabase/seed/*.sql
+# Exclude local development database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Keep migration files
+!**/supabase/migrations/*.sql
+
+# Supabase config for development (don't expose)
+**/supabase/config.toml

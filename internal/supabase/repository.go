@@ -13,7 +13,6 @@ import (
 // Repository defines the interface for Supabase database operations
 type Repository interface {
 	UpsertRegisteredHWID(input *RegisteredHWIDInput) (*RegisteredHWID, error)
-	GetRegisteredHWIDs(userID string) ([]RegisteredHWID, error)
 }
 
 // repository implements the Repository interface
