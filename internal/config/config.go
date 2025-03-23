@@ -17,12 +17,8 @@ type Config struct {
 	SupabaseInstance   string
 	SupabaseServiceKey string
 
-	SuperUserDiscordID string
-	AdminRoleID        string
-	ModeratorRoleID    string
-	CookieDomain       string
-
-	LogDir string
+	CookieDomain string
+	LogDir       string
 }
 
 // Load creates a new Config from environment variables
@@ -36,12 +32,8 @@ func Load() (*Config, error) {
 		SupabaseInstance:   os.Getenv("SUPABASE_INSTANCE"),
 		SupabaseServiceKey: os.Getenv("SUPABASE_SERVICE_ROLE_KEY"),
 
-		SuperUserDiscordID: os.Getenv("SUPER_USER_DISCORD_ID"),
-		AdminRoleID:        os.Getenv("ADMIN_ROLE_ID"),
-		ModeratorRoleID:    os.Getenv("MODERATOR_ROLE_ID"),
-		CookieDomain:       getCookieDomain(getEnvOrDefault("ENV", "development")),
-
-		LogDir: getEnvOrDefault("LOG_DIR", filepath.Join(".", "logs")),
+		CookieDomain: getCookieDomain(getEnvOrDefault("ENV", "development")),
+		LogDir:       getEnvOrDefault("LOG_DIR", filepath.Join(".", "logs")),
 	}
 
 	if err := cfg.Validate(); err != nil {
@@ -67,8 +59,8 @@ func (c *Config) Validate() error {
 	if c.AppURL == "" {
 		missingVars = append(missingVars, "APP_URL")
 	}
-	if c.SuperUserDiscordID == "" {
-		missingVars = append(missingVars, "SUPER_USER_DISCORD_ID")
+	if c.Port == "" {
+		missingVars = append(missingVars, "PORT")
 	}
 
 	if len(missingVars) > 0 {
