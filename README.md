@@ -1,6 +1,6 @@
 # UTBT Auth
 
-[![Auth Release](https://img.shields.io/badge/Auth-latest-blue)](https://github.com/UT-BT/auth/releases/tag/latest)
+[![Auth Release](https://img.shields.io/badge/Auth-latest-blue)](https://github.com/UT-BT/auth/releases/latest)
 
 
 Authentication service built with Go, providing Discord-based authentication and role-based access control (RBAC) for the UTBT platform. This service integrates with Supabase for user management and authentication.
