@@ -39,7 +39,6 @@ func (cm *CookieManager) SetAuthCookies(w http.ResponseWriter, token *TokenRespo
 
 // SetProviderCookies sets provider-specific cookies
 func (cm *CookieManager) SetProviderCookies(w http.ResponseWriter, providerToken, providerRefreshToken string) {
-	// Max age is 30 days in Time Duration
 	maxAge := 30 * 24 * time.Hour
 	log.Debug().Str("provider_token", providerToken).Str("provider_refresh_token", providerRefreshToken).Dur("max_age", maxAge).Msg("Setting provider cookies")
 	cm.setSecureCookie(w, providerTokenCookie, providerToken, maxAge)
