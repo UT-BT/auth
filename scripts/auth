@@ -1,141 +1,221 @@
-﻿#!/usr/bin/env bash
+#!/usr/bin/env bash
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;36m'
 NC='\033[0m' # No Color
-BOLD='\033[1m'
-
+CHECK="✓"
+CROSS="×"
 SPINNER=('-' '\' '|' '/')
 
+EXE_EXTENSION=""
+if [[ "$(uname -s)" == *"MINGW"* ]] || [[ "$(uname -s)" == *"MSYS"* ]]; then
+    EXE_EXTENSION=".exe"
+fi
+
+write_color_output() {
+    local message="$1"
+    local color="$2"
+    
+    echo -ne "${color}${message}${NC}"
+}
+
 get_version() {
-    echo "$(git log -1 --format="%h")-dev"
+    local git_version
+    
+    git_version=$(git log -1 --format='%h' 2>/dev/null)
+    
+    if [ -z "$git_version" ]; then
+        echo "unknown-dev"
+    else
+        echo "${git_version}-dev"
+    fi
 }
 
 show_status() {
-    local message=$1
-    local cmd=$2
+    local message="$1"
+    local command="$2"
+    shift 2
+    
     local i=0
-    local spin_len=${#SPINNER[@]}
-
-    tput sc
+    local original_cursor_top
+    local spinner_char
+    local start_line
+    local success=false
+    local output=""
+    local error_output=""
     
-    eval "$cmd" > /dev/null 2>&1 &
-    local pid=$!
+    start_line=$(tput lines)
     
-    while kill -0 $pid 2>/dev/null; do
-        i=$(( i + 1 ))
-        # Restore cursor position and print status
-        tput rc
-        printf "%b%b%b %s..." "${BLUE}" "${SPINNER[$((i % spin_len))]}" "${NC}" "${message}"
+    eval "$command" > /tmp/cmd_output 2> /tmp/cmd_error &
+    local cmd_pid=$!
+    
+    while kill -0 $cmd_pid 2>/dev/null; do
+        spinner_char="${SPINNER[$((i % 4))]}"
+        printf "\r%b%s%b %s..." "$BLUE" "$spinner_char" "$NC" "$message"
         sleep 0.2
+        ((i++))
     done
-
-    wait $pid
-    local exit_status=$?
-
-    tput rc
-    if [ $exit_status -eq 0 ]; then
-        echo -e "${GREEN}✓${NC} ${message}${GREEN} (done)${NC}"
+    
+    wait $cmd_pid
+    local exit_code=$?
+    
+    output=$(<"/tmp/cmd_output")
+    error_output=$(<"/tmp/cmd_error")
+    
+    if [ $exit_code -eq 0 ]; then
+        echo -ne "\r${GREEN}${CHECK}${NC} ${message}"
+        write_color_output " (done)" "${GREEN}"
+        echo ""
+        success=true
     else
-        echo -e "${RED}×${NC} ${message}${RED} (failed)${NC}"
-        echo "Exit status: $exit_status"
-        echo "Command: $cmd"
-        exit $exit_status
+        echo -ne "\r${RED}${CROSS}${NC} ${message}"
+        write_color_output " (failed)" "${RED}"
+        echo ""
+        if [ -n "$error_output" ]; then
+            echo -e "${RED}Error: $error_output${NC}"
+        fi
+        if [ -n "$output" ]; then
+            echo -e "${RED}Output: $output${NC}"
+        fi
+        exit 1
     fi
+    
+    rm -f /tmp/cmd_output /tmp/cmd_error
+    
+    return $exit_code
 }
 
-clean_command() {
-    echo -e "\n${BOLD}Cleaning build artifacts...${NC}\n"
-    show_status "Cleaning previous builds" "rm -f auth-* 2>/dev/null || true"
+start_clean_command() {
+    echo -e "\nCleaning build artifacts...\n"
+    
+    show_status "Cleaning previous builds" "if ls auth-* &>/dev/null; then rm -f auth-*; fi"
+    
     show_status "Cleaning up Go dependencies" "go mod tidy"
+    
     show_status "Cleaning Go test cache" "go clean -testcache"
 }
 
-build_command() {
-    echo -e "\n${BOLD}Building server...${NC}\n"
+start_build_command() {
+    echo -e "\nBuilding server...\n"
     
     VERSION=$(get_version)
-    echo -e "${BOLD}Building version:${NC} ${BLUE}${VERSION}${NC}\n"
-
+    echo -n "Building version: "
+    write_color_output "$VERSION" "$BLUE"
+    echo -e "\n"
+    
     show_status "Formatting code" "go fmt ./..."
     
-    if [[ "$OSTYPE" == "msys"* ]] || [[ "$OSTYPE" == "cygwin"* ]]; then
-        show_status "Building executable" "go build -ldflags \"-X main.version=${VERSION}\" -o auth-${VERSION}.exe ./cmd/server/main.go"
-        echo -e "\n${GREEN}✓${NC} Build successful: ${BLUE}auth-${VERSION}.exe${NC}"
-    else
-        show_status "Building executable" "go build -ldflags \"-X main.version=${VERSION}\" -o auth-${VERSION} ./cmd/server/main.go"
-        echo -e "\n${GREEN}✓${NC} Build successful: ${BLUE}auth-${VERSION}${NC}"
-    fi
+    show_status "Building executable" "VERSION=$VERSION go build -ldflags \"-X main.version=$VERSION\" -o \"auth-$VERSION$EXE_EXTENSION\" ./cmd/server/main.go"
+    
+    echo -n -e "\n"
+    write_color_output "$CHECK " "$GREEN"
+    echo -n "Build successful: "
+    write_color_output "auth-$VERSION$EXE_EXTENSION" "$BLUE"
+    echo ""
 }
 
-run_command() {
+start_run_command() {
     VERSION=$(get_version)
-    if [[ "$OSTYPE" == "msys"* ]] || [[ "$OSTYPE" == "cygwin"* ]]; then
-        if [ ! -f "auth-${VERSION}.exe" ]; then
-            echo -e "${YELLOW}Executable not found, building first...${NC}\n"
-            build_command
-        fi
-        echo -e "\n${BOLD}Starting the server...${NC}"
-        ./auth-${VERSION}.exe
+    exe_path="auth-$VERSION$EXE_EXTENSION"
+    
+    if [ ! -f "$exe_path" ]; then
+        write_color_output "Executable not found, building first..." "$YELLOW"
+        echo -e "\n"
+        start_build_command
+    fi
+    
+    if [ -f "$exe_path" ]; then
+        echo -e "\nStarting the server..."
+        chmod +x "./$exe_path"
+        "./$exe_path"
     else
-        if [ ! -f "auth-${VERSION}" ]; then
-            echo -e "${YELLOW}Executable not found, building first...${NC}\n"
-            build_command
-        fi
-        echo -e "\n${BOLD}Starting the server...${NC}"
-        ./auth-${VERSION}
+        write_color_output "Error: " "$RED"
+        echo "Could not find executable $exe_path even after building"
+        exit 1
     fi
 }
 
-test_command() {
-    echo -e "\n${BOLD}Running tests...${NC}\n"
+start_test_command() {
+    echo -e "\nRunning tests...\n"
+    
     show_status "Running tests" "go test -v ./..."
 }
 
-dev_command() {
-    echo -e "\n${BOLD}Starting development setup...${NC}\n"
-    clean_command
-    test_command
-    build_command
-    run_command
+start_dev_command() {
+    echo -e "\nStarting development setup...\n"
+    start_clean_command
+    start_test_command
+    start_build_command
+    start_run_command
 }
 
-help_command() {
-    echo -e "${BOLD}Usage:${NC}"
-    echo -e "  ${YELLOW}./scripts/cli${NC} ${GREEN}<command>${NC}"
-    echo -e "\n${BOLD}Available commands:${NC}"
-    echo -e "  ${GREEN}build${NC}    Build the server executable"
-    echo -e "  ${GREEN}run${NC}      Run the server (builds if needed)"
-    echo -e "  ${GREEN}dev${NC}      Clean, build, and run the server"
-    echo -e "  ${GREEN}test${NC}     Run tests"
-    echo -e "  ${GREEN}clean${NC}    Clean build artifacts and dependencies"
-    echo -e "  ${GREEN}help${NC}     Show this help message"
+show_help_command() {
+    echo "Usage:"
+    echo -n "  "
+    write_color_output "./auth.sh" "$YELLOW"
+    echo -n " "
+    write_color_output "<command>" "$GREEN"
+    echo ""
+    
+    echo "Available commands:"
+    echo -n "  "
+    write_color_output "build" "$GREEN"
+    echo "    Build the server executable"
+    
+    echo -n "  "
+    write_color_output "run" "$GREEN"
+    echo "      Run the server (builds if needed)"
+    
+    echo -n "  "
+    write_color_output "dev" "$GREEN"
+    echo "      Clean, build, and run the server"
+    
+    echo -n "  "
+    write_color_output "test" "$GREEN"
+    echo "     Run tests"
+    
+    echo -n "  "
+    write_color_output "clean" "$GREEN"
+    echo "    Clean build artifacts and dependencies"
+    
+    echo -n "  "
+    write_color_output "help" "$GREEN"
+    echo "     Show this help message"
 }
+
+if [[ "$1" == "-help" || "$1" == "/help" || "$1" == "-h" || "$1" == "--help" ]]; then
+    show_help_command
+    exit 0
+fi
 
 case "$1" in
     "build")
-        build_command
+        start_build_command
         ;;
     "run")
-        run_command
+        start_run_command
         ;;
     "dev")
-        dev_command
+        start_dev_command
         ;;
     "test")
-        test_command
+        start_test_command
         ;;
     "clean")
-        clean_command
+        start_clean_command
         ;;
-    "help"|"")
-        help_command
+    "help")
+        show_help_command
+        ;;
+    "")
+        show_help_command
         ;;
     *)
-        echo -e "${RED}Error:${NC} Unknown command '$1'"
-        help_command
+        write_color_output "Error: " "$RED"
+        echo "Unknown command '$1'"
+        show_help_command
         exit 1
         ;;
 esac
