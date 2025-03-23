@@ -10,7 +10,6 @@ import (
 // Service provides high-level operations for Supabase data
 type Service interface {
 	RegisterHWID(user *types.User, hwid string) (*RegisteredHWID, error)
-	GetUserHWIDs(userID string) ([]RegisteredHWID, error)
 }
 
 type service struct {
