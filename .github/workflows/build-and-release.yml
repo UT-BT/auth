@@ -13,10 +13,12 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v4
         with:
           go-version: '1.23'
 
@@ -98,13 +100,43 @@ jobs:
             sed -i "/^# UTBT Auth/a\\\n$BADGE_MARKDOWN\n" README.md
           fi
 
-      - name: Commit README Update
+      - name: Create PR for README Update
         run: |
           git config --local user.name "github-actions[bot]"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git pull
+          
+          BRANCH_NAME="update-readme-badge-${{ github.event.inputs.version }}"
+          git checkout -b $BRANCH_NAME
           git add README.md
           git commit -m "chore: update readme with v${{ github.event.inputs.version }} release badge" || exit 0
-          git push
+          git push origin $BRANCH_NAME
+          
+          # Store branch name for later steps
+          echo "PR_BRANCH=$BRANCH_NAME" >> $GITHUB_ENV
+
+      - name: Open Pull Request
+        id: create_pr
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GH_PAT }}
+          branch: ${{ env.PR_BRANCH }}
+          base: main
+          title: "chore: update readme with v${{ github.event.inputs.version }} release badge"
+          body: "This PR updates the README with the latest release badge."
+          labels: documentation, automated
+          assignees: ${{ github.actor }}
+          reviewers: ${{ github.actor }}
+
+      - name: Approve PR
+        if: success()
+        run: |
+          gh pr review --approve --repo ${{ github.repository }} ${{ steps.create_pr.outputs.pull-request-number }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+
+      - name: Merge PR
+        if: success()
+        run: |
+          gh pr merge --auto --squash --repo ${{ github.repository }} ${{ steps.create_pr.outputs.pull-request-number }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
