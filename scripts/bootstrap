@@ -7,9 +7,33 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 BOLD='\033[1m'
 
+# Global variables for configuration
+declare -A SUPABASE_CONFIG
+PROJECT_NAME="utbt-auth-dev"
+APP_URL="localhost"
+PORT="8080"
+DISCORD_CLIENT_ID=""
+DISCORD_CLIENT_SECRET=""
+
 check_command() {
     if ! command -v $1 &> /dev/null; then
         echo -e "${RED}Error:${NC} $1 is not installed"
+        return 1
+    fi
+    return 0
+}
+
+check_docker_running() {
+    if ! docker info &> /dev/null; then
+        echo -e "${RED}Error:${NC} Docker is not running"
+        return 1
+    fi
+    return 0
+}
+
+check_supabase_login() {
+    if ! supabase projects list &> /dev/null; then
+        echo -e "${RED}Error:${NC} Not logged in to Supabase"
         return 1
     fi
     return 0
@@ -29,73 +53,280 @@ check_go_version() {
 
 install_templ() {
     echo -e "${BOLD}Installing templ...${NC}"
-    go install github.com/a-h/templ/cmd/templ@latest
-    echo -e "${GREEN}✓${NC} templ installed successfully - make sure your Go bin is in your PATH"
+    go install github.com/a-h/templ/cmd/templ@latest > /dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}✓${NC} templ installed successfully - make sure your Go bin is in your PATH"
+    else
+        echo -e "${RED}Error:${NC} Failed to install templ"
+        exit 1
+    fi
 }
 
 setup_go_deps() {
     echo -e "${BOLD}Setting up Go dependencies...${NC}"
-    go mod download
-    go mod tidy
+    go mod download > /dev/null 2>&1
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}Error:${NC} Failed to download Go dependencies"
+        exit 1
+    fi
+    
+    go mod tidy > /dev/null 2>&1
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}Error:${NC} Failed to tidy Go dependencies"
+        exit 1
+    fi
+    
+    echo -e "${GREEN}✓${NC} Go dependencies set up successfully"
+}
+
+collect_project_config() {
+    echo -e "\n${BOLD}Project Configuration${NC}"
+    echo -e "${YELLOW}Enter project name (default: utbt-auth-dev):${NC}"
+    read -r input_project_name
+    if [ ! -z "$input_project_name" ]; then
+        PROJECT_NAME="$input_project_name"
+    fi
+    
+    echo -e "${YELLOW}Enter APP URL where the auth server will run (default: localhost):${NC}"
+    read -r input_app_url
+    if [ ! -z "$input_app_url" ]; then
+        APP_URL="$input_app_url"
+    fi
+    
+    echo -e "${YELLOW}Enter PORT where the auth server will run (default: 8080):${NC}"
+    read -r input_port
+    if [ ! -z "$input_port" ]; then
+        PORT="$input_port"
+    fi
+    
+    echo -e "${YELLOW}Enter Discord Client ID (required for Discord OAuth):${NC}"
+    read -r input_discord_client_id
+    if [ -z "$input_discord_client_id" ]; then
+        echo -e "${RED}Discord Client ID is required. Get it from the Discord Developer Dashboard.${NC}"
+        echo -e "${BLUE}https://discord.com/developers/applications${NC}"
+        exit 1
+    fi
+    DISCORD_CLIENT_ID="$input_discord_client_id"
+    
+    echo -e "${YELLOW}Enter Discord Client Secret (required for Discord OAuth):${NC}"
+    read -r input_discord_client_secret
+    if [ -z "$input_discord_client_secret" ]; then
+        echo -e "${RED}Discord Client Secret is required. Get it from the Discord Developer Portal.${NC}"
+        echo -e "${BLUE}https://discord.com/developers/applications${NC}"
+        exit 1
+    fi
+    DISCORD_CLIENT_SECRET="$input_discord_client_secret"
+    
+    echo -e "${GREEN}✓${NC} Project configuration collected"
+}
+
+setup_supabase_config() {
+    echo -e "${BOLD}Setting up Supabase configuration...${NC}"
+    
+    CONFIG_DIR="supabase"
+    mkdir -p "$CONFIG_DIR" > /dev/null 2>&1
+    
+    if [ -f "$CONFIG_DIR/config.toml" ]; then
+        echo -e "${YELLOW}$CONFIG_DIR/config.toml already exists. Do you want to overwrite it? (y/n)${NC}"
+        read -r overwrite
+        if [ "$overwrite" != "y" ]; then
+            echo -e "${YELLOW}Keeping existing configuration.${NC}"
+            return
+        fi
+    fi
+
+    EXAMPLE_CONFIG="$CONFIG_DIR/config.toml.example"
+    if [ ! -f "$EXAMPLE_CONFIG" ]; then
+        echo -e "${YELLOW}Example config not found. Creating new config from scratch.${NC}"
+        cat > "$CONFIG_DIR/config.toml" << EOL
+project_id = "$PROJECT_NAME"
+
+[auth]
+site_url = "http://$APP_URL:$PORT"
+additional_redirect_urls = ["http://$APP_URL:$PORT/callback"]
+
+[auth.external.discord]
+client_id = "$DISCORD_CLIENT_ID"
+secret = "$DISCORD_CLIENT_SECRET"
+EOL
+    else
+        config_content=$(cat "$EXAMPLE_CONFIG")
+
+        config_content=$(echo "$config_content" | sed "s/project_id = \"utbt-auth-dev\"/project_id = \"$PROJECT_NAME\"/" 2>/dev/null)
+        
+        config_content=$(echo "$config_content" | sed -E "s|site_url = \"[^\"]*\"|site_url = \"http://$APP_URL:$PORT\"|" 2>/dev/null)
+        config_content=$(echo "$config_content" | sed -E "s|additional_redirect_urls = \[[^\]]*\]|additional_redirect_urls = [\"http://$APP_URL:$PORT/callback\"]|" 2>/dev/null)
+        
+        config_content=$(echo "$config_content" | sed "s/client_id = \"your-client-id\"/client_id = \"$DISCORD_CLIENT_ID\"/" 2>/dev/null)
+        config_content=$(echo "$config_content" | sed "s/secret = \"your-client-secret\"/secret = \"$DISCORD_CLIENT_SECRET\"/" 2>/dev/null)
+
+        echo "$config_content" > "$CONFIG_DIR/config.toml"
+    fi
+    
+    echo -e "${GREEN}✓${NC} Created $CONFIG_DIR/config.toml with your configuration"
+}
+
+setup_supabase_env() {
+    echo -e "${BOLD}Setting up Supabase environment...${NC}"
+    
+    if ! check_command "supabase"; then
+        echo -e "${RED}Supabase CLI is not installed${NC}"
+        echo -e "Please install it by following instructions at: ${BLUE}https://supabase.com/docs/guides/cli${NC}"
+        exit 1
+    fi
+
+    if ! check_command "docker"; then
+        echo -e "${RED}Docker is not installed${NC}"
+        echo -e "Please install Docker Desktop from: ${BLUE}https://www.docker.com/products/docker-desktop${NC}"
+        exit 1
+    fi
+
+    if ! check_docker_running; then
+        echo -e "${YELLOW}Please start Docker Desktop and try again${NC}"
+        exit 1
+    fi
+
+    echo -e "${BOLD}Stopping Supabase if running...${NC}"
+    supabase stop > /dev/null 2>&1 || true
+    
+    echo -e "${BOLD}Starting Supabase with new configuration...${NC}"
+    supabase_output=$(supabase start 2>&1)
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}Failed to start Supabase${NC}"
+        echo "$supabase_output"
+        exit 1
+    fi
+
+    while IFS= read -r line; do
+        if [[ $line =~ "API URL: "(.+) ]]; then
+            SUPABASE_CONFIG[url]="${BASH_REMATCH[1]}"
+        elif [[ $line =~ "anon key: "(.+) ]]; then
+            SUPABASE_CONFIG[anon_key]="${BASH_REMATCH[1]}"
+        elif [[ $line =~ "service_role key: "(.+) ]]; then
+            SUPABASE_CONFIG[service_role_key]="${BASH_REMATCH[1]}"
+        fi
+    done <<< "$supabase_output"
+    
+    echo -e "${GREEN}✓${NC} Supabase started successfully. API URL: ${SUPABASE_CONFIG[url]}"
 }
 
 create_env_file() {
-    if [ ! -f ".env" ]; then
-        echo -e "${BOLD}Creating .env file...${NC}"
-        cat > .env << EOL
+    if [ -f ".env" ]; then
+        echo -e "${YELLOW}.env file already exists. Do you want to overwrite it? (y/n)${NC}"
+        read -r overwrite
+        if [ "$overwrite" != "y" ]; then
+            echo -e "${YELLOW}Keeping existing .env file.${NC}"
+            return
+        fi
+    fi
+
+    echo -e "${BOLD}Creating .env file...${NC}"
+
+    local supabase_url=${SUPABASE_CONFIG[url]:-http://localhost:54321}
+    local supabase_service_role_key=${SUPABASE_CONFIG[service_role_key]:-your_supabase_service_role_key}
+
+    cat > .env << EOL > /dev/null 2>&1
 # Server Configuration
-PORT=8080
+PORT=$PORT
+APP_URL=http://$APP_URL:$PORT
 ENV=development
 
 # Supabase Configuration
-SUPABASE_URL=your_supabase_url
-SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+SUPABASE_INSTANCE=$PROJECT_NAME
+SUPABASE_URL=$supabase_url
+SUPABASE_SERVICE_ROLE_KEY=$supabase_service_role_key
 
 # Logging Configuration
 LOG_LEVEL=debug
 LOG_FILE=logs/app.log
 EOL
-        echo -e "${YELLOW}Please update the .env file with your actual configuration values${NC}"
-    fi
+    echo -e "${GREEN}✓${NC} Created .env file with configuration"
 }
 
 main() {
     echo -e "${BOLD}Starting development environment setup...${NC}\n"
 
-    # Check for required tools
     echo -e "${BOLD}Checking required tools...${NC}"
+    
+    # Check for Go
     if ! check_command "go"; then
-        echo -e "${RED}Please install Go from https://golang.org/doc/install${NC}"
+        echo -e "${RED}Go is not installed${NC}"
+        echo -e "Please install Go from: ${BLUE}https://golang.org/doc/install${NC}"
         exit 1
     fi
-
-    if ! check_command "git"; then
-        echo -e "${RED}Please install Git from https://git-scm.com/downloads${NC}"
-        exit 1
-    fi
-
+    
     # Check Go version
     if ! check_go_version; then
-        echo -e "${RED}Please upgrade your Go installation${NC}"
+        echo -e "${RED}Please upgrade your Go installation to at least version 1.23${NC}"
         exit 1
     fi
+    echo -e "${GREEN}✓${NC} Go version check passed"
 
-    # Install templ if not present
+    # Check for Templ
     if ! check_command "templ"; then
+        echo -e "${YELLOW}Templ is not installed. Installing now...${NC}"
         install_templ
+    else
+        echo -e "${GREEN}✓${NC} Templ is installed"
     fi
+
+    # Check for Git
+    if ! check_command "git"; then
+        echo -e "${RED}Git is not installed${NC}"
+        echo -e "Please install Git from: ${BLUE}https://git-scm.com/downloads${NC}"
+        exit 1
+    fi
+    echo -e "${GREEN}✓${NC} Git is installed"
+
+    # Check for Docker
+    if ! check_command "docker"; then
+        echo -e "${RED}Docker is not installed${NC}"
+        echo -e "Please install Docker Desktop from: ${BLUE}https://www.docker.com/products/docker-desktop${NC}"
+        exit 1
+    fi
+    
+    # Check if Docker is running
+    if ! check_docker_running; then
+        echo -e "${RED}Docker is not running${NC}"
+        echo -e "${YELLOW}Please start Docker Desktop and try again${NC}"
+        exit 1
+    fi
+    echo -e "${GREEN}✓${NC} Docker is installed and running"
+
+    # Check for Supabase CLI
+    if ! check_command "supabase"; then
+        echo -e "${RED}Supabase CLI is not installed${NC}"
+        echo -e "Please install it by following instructions at: ${BLUE}https://supabase.com/docs/guides/cli${NC}"
+        exit 1
+    fi
+    echo -e "${GREEN}✓${NC} Supabase CLI is installed"
+    
+    # Check Supabase login status
+    if ! check_supabase_login; then
+        echo -e "${YELLOW}Please login to Supabase using:${NC}"
+        echo -e "${BLUE}supabase login${NC}"
+        exit 1
+    fi
+    echo -e "${GREEN}✓${NC} Logged in to Supabase"
+
+    # Collect project configuration
+    collect_project_config
 
     # Setup Go dependencies
     setup_go_deps
 
-    # Create environment file if needed
+    # Setup Supabase configuration
+    setup_supabase_config
+
+    # Setup Supabase environment
+    setup_supabase_env
+
+    # Create environment file
     create_env_file
 
-    echo -e "\n${GREEN}✓${NC} Development environment setup complete!"
-    echo -e "\n${BOLD}Next steps:${NC}"
-    echo -e "1. Update the ${YELLOW}.env${NC} file with your configuration"
-    echo -e "2. Run ${YELLOW}./scripts/auth dev${NC} to start the development server"
+    echo -e "\n${GREEN}✓ Configuration complete!${NC}"
+    echo -e "\n${BOLD}You can now run the app with:${NC}"
+    echo -e "${YELLOW}./scripts/auth dev${NC}"
 }
 
 main 
