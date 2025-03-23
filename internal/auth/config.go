@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"fmt"
+
 	"github.com/UT-BT/auth/internal/config"
 	"github.com/supabase-community/auth-go"
 )
@@ -15,6 +17,10 @@ func NewClient(cfg *config.Config) *Client {
 		cfg.SupabaseInstance,
 		cfg.SupabaseServiceKey,
 	)
+
+	if cfg.Environment == "development" {
+		client = client.WithCustomAuthURL(fmt.Sprintf("%s/auth/v1", cfg.SupabaseURL))
+	}
 
 	return &Client{
 		auth: client,
