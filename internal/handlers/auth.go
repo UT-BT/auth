@@ -10,7 +10,6 @@ import (
 	"github.com/UT-BT/auth/internal/supabase"
 	"github.com/UT-BT/auth/internal/templates"
 	"github.com/UT-BT/auth/internal/types"
-	"github.com/rs/zerolog/log"
 	supabasetypes "github.com/supabase-community/auth-go/types"
 
 	"github.com/go-chi/chi/v5"
@@ -60,8 +59,6 @@ func (h *AuthHandler) indexPage(w http.ResponseWriter, r *http.Request) {
 	user, err := h.getUserFromCookies(w, r)
 	// User not logged in
 	if err != nil {
-		h.cookieManager.ClearAllAuthCookies(w)
-
 		hwid := r.URL.Query().Get("hwid")
 		if hwid != "" {
 			h.cookieManager.SetPendingHWID(w, hwid)
@@ -71,23 +68,17 @@ func (h *AuthHandler) indexPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// User is logged in
-	var bHwidFound bool = false
-
 	hwid := r.URL.Query().Get("hwid")
+
 	if hwid != "" {
 		h.supabaseService.RegisterHWID(user, hwid)
-		bHwidFound = true
+		h.cookieManager.ClearPendingHWID(w)
 	}
 
-	if !bHwidFound {
-		pendingHWID, err := h.cookieManager.GetPendingHWID(r)
-		if err != nil {
-			log.Debug().Msg("Failed to get pending HWID")
-		} else if pendingHWID != "" {
-			h.supabaseService.RegisterHWID(user, pendingHWID)
-			h.cookieManager.ClearPendingHWID(w)
-		}
+	pendingHWID, err := h.cookieManager.GetPendingHWID(r)
+	if err == nil && pendingHWID != "" {
+		h.supabaseService.RegisterHWID(user, pendingHWID)
+		h.cookieManager.ClearPendingHWID(w)
 	}
 
 	templates.Index(user).Render(r.Context(), w)
