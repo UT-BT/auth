@@ -41,3 +41,6 @@ go.work.sum
 
 # Supabase config for development (don't expose)
 **/supabase/config.toml
+
+# Logs
+logs/*
