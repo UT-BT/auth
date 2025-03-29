@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -13,6 +14,7 @@ import (
 	supabasetypes "github.com/supabase-community/auth-go/types"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/rs/zerolog/log"
 )
 
 // AuthHandler handles authentication-related HTTP requests
@@ -69,16 +71,19 @@ func (h *AuthHandler) indexPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	hwid := r.URL.Query().Get("hwid")
-
 	if hwid != "" {
 		h.supabaseService.RegisterHWID(user, hwid)
 		h.cookieManager.ClearPendingHWID(w)
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		return
 	}
 
-	pendingHWID, err := h.cookieManager.GetPendingHWID(r)
-	if err == nil && pendingHWID != "" {
+	pendingHWID, _ := h.cookieManager.GetPendingHWID(r)
+	if pendingHWID != "" {
 		h.supabaseService.RegisterHWID(user, pendingHWID)
 		h.cookieManager.ClearPendingHWID(w)
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		return
 	}
 
 	templates.Index(user).Render(r.Context(), w)
@@ -124,21 +129,24 @@ func extractDiscordUsername(identity *supabasetypes.Identity) string {
 func (h *AuthHandler) getUserFromCookies(w http.ResponseWriter, r *http.Request) (*types.User, error) {
 	accessToken, err := h.cookieManager.GetAccessToken(r)
 	if err != nil {
-		refreshToken, err := h.cookieManager.GetRefreshToken(r)
-		if err != nil {
-			return nil, err
+		refreshToken, refreshErr := h.cookieManager.GetRefreshToken(r)
+		if refreshErr != nil {
+			return nil, refreshErr
 		}
 
-		token, err := h.authClient.RefreshToken(refreshToken)
-		if err != nil {
-			return nil, err
+		newToken, refreshErr := h.authClient.RefreshToken(refreshToken)
+		if refreshErr != nil {
+			h.cookieManager.ClearAllAuthCookies(w)
+			return nil, refreshErr
 		}
 
-		h.cookieManager.SetAuthCookies(w, token)
+		h.cookieManager.SetAuthCookies(w, newToken)
+		accessToken = newToken.AccessToken
 	}
 
 	supabaseUser, err := h.authClient.GetUserFromToken(accessToken)
 	if err != nil {
+		h.cookieManager.ClearAllAuthCookies(w)
 		return nil, err
 	}
 
@@ -164,11 +172,30 @@ func (h *AuthHandler) getUserFromCookies(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
+	registeredHWIDRecord, err := h.supabaseService.GetRegisteredHWID(supabaseUser.ID.String())
+	if err != nil {
+		log.Warn().Err(err).Str("user_id", supabaseUser.ID.String()).Msg("Error fetching registered HWID")
+	}
+	hwid := ""
+	if registeredHWIDRecord != nil {
+		hwid = registeredHWIDRecord.HWID
+	}
+
+	providerRefreshToken, err := h.cookieManager.GetProviderRefreshToken(r)
+	gameToken := ""
+	if err == nil && providerRefreshToken != "" {
+		gameToken = fmt.Sprintf("utbt:%s", providerRefreshToken)
+	} else if err != http.ErrNoCookie {
+		log.Warn().Err(err).Str("user_id", supabaseUser.ID.String()).Msg("Error fetching provider refresh token cookie")
+	}
+
 	return &types.User{
-		ID:            supabaseUser.ID.String(),
-		DiscordUserID: identity.ID,
-		Username:      discordUsername,
-		AvatarURL:     avatarURL,
+		ID:             supabaseUser.ID.String(),
+		DiscordUserID:  identity.ID,
+		Username:       discordUsername,
+		AvatarURL:      avatarURL,
+		RegisteredHWID: hwid,
+		GameToken:      gameToken,
 	}, nil
 }
 

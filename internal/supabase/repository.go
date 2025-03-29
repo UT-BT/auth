@@ -13,6 +13,7 @@ import (
 // Repository defines the interface for Supabase database operations
 type Repository interface {
 	UpsertRegisteredHWID(input *RegisteredHWIDInput) (*RegisteredHWID, error)
+	GetRegisteredHWID(userID string) (*RegisteredHWID, error)
 }
 
 // repository implements the Repository interface
@@ -77,4 +78,43 @@ func (r *repository) UpsertRegisteredHWID(input *RegisteredHWIDInput) (*Register
 	}
 
 	return &results[0], nil
+}
+
+func (r *repository) GetRegisteredHWID(userID string) (*RegisteredHWID, error) {
+	endpoint := fmt.Sprintf("%s/rest/v1/registered_hwids", r.baseURL)
+	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("apikey", r.serviceKey)
+	req.Header.Set("Authorization", "Bearer "+r.serviceKey)
+	req.Header.Set("Accept", "application/vnd.pgrst.object+json")
+
+	q := req.URL.Query()
+	q.Add("select", "*")
+	q.Add("user_id", fmt.Sprintf("eq.%s", userID))
+	q.Add("limit", "1")
+	req.URL.RawQuery = q.Encode()
+
+	resp, err := r.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, nil
+	}
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("unexpected status code %d: %s", resp.StatusCode, string(body))
+	}
+
+	var result RegisteredHWID
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &result, nil
 }

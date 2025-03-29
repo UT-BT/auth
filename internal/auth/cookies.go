@@ -100,6 +100,18 @@ func (cm *CookieManager) GetRefreshToken(r *http.Request) (string, error) {
 	return cookie.Value, nil
 }
 
+// GetProviderRefreshToken retrieves the provider refresh token from cookies
+func (cm *CookieManager) GetProviderRefreshToken(r *http.Request) (string, error) {
+	log.Debug().Msg("Retrieving provider refresh token from cookies")
+	cookie, err := r.Cookie(providerRefreshTokenCookie)
+	if err != nil {
+		log.Debug().Err(err).Msg("Failed to get provider refresh token cookie")
+		return "", err
+	}
+	log.Debug().Str("provider_refresh_token", cookie.Value).Msg("Successfully retrieved provider refresh token from cookies")
+	return cookie.Value, nil
+}
+
 // GetPendingHWID retrieves the pending HWID from cookies
 func (cm *CookieManager) GetPendingHWID(r *http.Request) (string, error) {
 	log.Debug().Msg("Retrieving pending HWID from cookies")

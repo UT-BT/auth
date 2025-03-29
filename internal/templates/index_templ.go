@@ -8,7 +8,9 @@ package templates
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-import "github.com/UT-BT/auth/internal/types"
+import (
+	"github.com/UT-BT/auth/internal/types"
+)
 
 func Index(user *types.User) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
@@ -67,46 +69,87 @@ func Index(user *types.User) templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"avatar\"><div class=\"w-24 rounded-full gradient-ring\"><img src=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div id=\"gameTokenData\" data-game-token=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var4 string
-				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(user.AvatarURL)
+				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(user.GameToken)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/index.templ`, Line: 30, Col: 44}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/index.templ`, Line: 30, Col: 48}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" alt=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" style=\"display: none;\"></div><script>\r\n                // Define the function to access the data attribute\r\n                window.copyToClipboard = function() {\r\n                    const gameToken = document.getElementById('gameTokenData').getAttribute('data-game-token');\r\n                    navigator.clipboard.writeText(gameToken).then(function() {\r\n                        // Token copied successfully, now show the modal\r\n                        const modal = document.getElementById('instructionModal');\r\n                        if (modal) {\r\n                            modal.showModal(); // Show the modal\r\n                        } else {\r\n                            console.error('Instruction modal element not found');\r\n                            alert('Game token copied, but instructions could not be shown.'); // Fallback alert\r\n                        }\r\n                    }, function(err) {\r\n                        // Failed to copy\r\n                        alert('Failed to copy game token: ' + err);\r\n                    });\r\n                }\r\n            </script> <div class=\"avatar\"><div class=\"w-24 rounded-full gradient-ring\"><img src=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var5 string
-				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(user.Username + "'s avatar")
+				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(user.AvatarURL)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/index.templ`, Line: 30, Col: 78}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/index.templ`, Line: 54, Col: 44}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\" class=\"rounded-full\"></div></div><h1 class=\"text-3xl font-bold\">Welcome back, ")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\" alt=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var6 string
-				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(user.Username)
+				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(user.Username + "'s avatar")
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/index.templ`, Line: 33, Col: 71}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/index.templ`, Line: 54, Col: 78}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "!</h1><div class=\"w-full\"><a href=\"/logout\" class=\"btn btn-error w-[75%] shadow-md hover:shadow-lg transition-all duration-200\">Logout</a></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\" class=\"rounded-full\"></div></div><h1 class=\"text-3xl font-bold\">Welcome back, ")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var7 string
+				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(user.Username)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/index.templ`, Line: 57, Col: 71}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "!</h1><div class=\"w-full flex flex-col items-center space-y-4\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				if user.RegisteredHWID != "" && user.GameToken != "" {
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<button class=\"btn btn-secondary w-[75%] shadow-md hover:shadow-lg transition-all duration-200\" onclick=\"window.copyToClipboard()\">Copy Game Server Token</button> ")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				} else {
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<div class=\"tooltip-container w-[75%]\"><button class=\"btn btn-secondary w-full shadow-md opacity-50 cursor-not-allowed\" disabled id=\"gameTokenButton\" game-token=\"")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var8 string
+					templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(user.GameToken)
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/index.templ`, Line: 72, Col: 55}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\">Copy Game Server Token</button> <span class=\"tooltip-text\">Open the login page from your game in order to get your game token!</span></div>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<a href=\"/logout\" class=\"btn btn-error w-[75%] shadow-md hover:shadow-lg transition-all duration-200\">Logout</a></div><dialog id=\"instructionModal\" class=\"modal\"><div class=\"modal-box max-w-3xl\"><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form><h2 class=\"text-xl font-semibold text-base-content mb-4\">Instructions</h2><p class=\"text-base-content/80 mb-4\"><b>Your token has been copied to your clipboard.</b><br><br>To complete the authentication, please head back into your Unreal Tournament client and follow these steps:<ul class=\"list-disc list-inside ml-4 space-y-1 my-4\"><li>Connect to a UTBT server and wait for the login screen.</li><li>Click <b>Paste Token</b>.</li><li>Click <b>Reconnect</b>.</li></ul></p><div class=\"divider my-4\"></div><img src=\"static/brands/utbt/login.png\" alt=\"UTBT Login Screen\" class=\"max-w-full rounded-lg shadow-md mb-4 mt-4 mx-auto\"><p class=\"text-warning font-semibold text-center mb-6\">Please ensure you keep your token secure and avoid sharing it with others.</p><div class=\"modal-action justify-center\"><form method=\"dialog\"><button class=\"btn btn-primary\">Got it!</button></form></div></div><form method=\"dialog\" class=\"modal-backdrop\"><button>close</button></form></dialog>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
