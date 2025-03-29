@@ -31,21 +31,18 @@ templ Index(user *types.User) {
                 style="display: none;"
             ></div>
             <script>
-                // Define the function to access the data attribute
                 window.copyToClipboard = function() {
                     const gameToken = document.getElementById('gameTokenData').getAttribute('data-game-token');
                     navigator.clipboard.writeText(gameToken).then(function() {
-                        // Token copied successfully, now show the modal
                         const modal = document.getElementById('instructionModal');
                         if (modal) {
-                            modal.showModal(); // Show the modal
+                            modal.showModal();
                         } else {
                             console.error('Instruction modal element not found');
-                            alert('Game token copied, but instructions could not be shown.'); // Fallback alert
+                            alert('Game token copied, but instructions could not be shown. Please try again later.');
                         }
                     }, function(err) {
-                        // Failed to copy
-                        alert('Failed to copy game token: ' + err);
+                        alert('Failed to copy game token. Please try again later.');
                     });
                 }
             </script>
