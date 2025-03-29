@@ -47,17 +47,34 @@ cd auth
 ```
 
 ## Building and Running
-The project includes cross-platform CLI tools in the `scripts/` directory to simplify development workflows:
+The project includes cross-platform CLI tools in the `scripts/` directory to simplify development workflows. Use the `help` command to see all available options:
 
 ### Windows (PowerShell)
 ```powershell
 .\scripts\auth.ps1 help
 ```
 
+Available commands include:
+- `build`: Builds the server executable.
+- `run`: Runs the server (builds first if needed).
+- `dev`: Cleans, generates templates, tests, builds, and runs the server.
+- `test`: Runs tests.
+- `clean`: Cleans build artifacts and dependencies.
+- `generate`: Generates HTMX templates.
+- `help`: Shows the help message.
+
 ### Unix/Linux/macOS
 ```bash
 ./scripts/auth help
 ```
+Available commands include:
+- `build`: Builds the server executable.
+- `run`: Runs the server (builds first if needed).
+- `dev`: Cleans, generates templates, tests, builds, and runs the server.
+- `test`: Runs tests.
+- `clean`: Cleans build artifacts and dependencies.
+- `generate`: Generates HTMX templates.
+- `help`: Shows the help message.
 
 ## Dependencies
 
@@ -67,6 +84,10 @@ The project includes cross-platform CLI tools in the `scripts/` directory to sim
 - [godotenv](https://github.com/joho/godotenv) - Environment variable loader
 - [supabase-community/auth-go](https://github.com/supabase-community/auth-go) - Supabase Auth Go client
 - [go-chi/cors](https://github.com/go-chi/cors) - CORS middleware
+
+## CI/CD
+
+This project uses GitHub Actions (`.github/workflows/build-and-release.yml`) to automate the build and release process.
 
 ## License
 
