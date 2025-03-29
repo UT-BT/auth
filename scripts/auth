@@ -97,9 +97,14 @@ start_clean_command() {
     show_status "Cleaning Go test cache" "go clean -testcache"
 }
 
+start_generate_command() {
+    echo -e "\nGenerating HTMX templates...\n"
+    show_status "Generating HTMX templates" "templ generate"
+}
+
 start_build_command() {
     echo -e "\nBuilding server...\n"
-    
+
     VERSION=$(get_version)
     echo -n "Building version: "
     write_color_output "$VERSION" "$BLUE"
@@ -146,6 +151,7 @@ start_test_command() {
 start_dev_command() {
     echo -e "\nStarting development setup...\n"
     start_clean_command
+    start_generate_command
     start_test_command
     start_build_command
     start_run_command
@@ -209,8 +215,8 @@ case "$1" in
     "help")
         show_help_command
         ;;
-    "")
-        show_help_command
+    "generate")
+        start_generate_command
         ;;
     *)
         write_color_output "Error: " "$RED"
