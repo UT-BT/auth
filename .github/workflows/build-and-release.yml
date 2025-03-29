@@ -57,9 +57,9 @@ jobs:
           fi
           
           if [ "$last_tag" != "first_release" ]; then
-            COMMIT_MESSAGES=$(git log "$last_tag"..HEAD --pretty=format:"%h - %s" --grep="(auth)")
+            COMMIT_MESSAGES=$(git log "$last_tag"..HEAD --pretty=format:"%h - %s")
           else
-            COMMIT_MESSAGES=$(git log --pretty=format:"%h - %s" --grep="(auth)")
+            COMMIT_MESSAGES=$(git log --pretty=format:"%h - %s")
           fi
           
           printf "COMMIT_MESSAGES<<EOF\n%s\nEOF\n" "$COMMIT_MESSAGES" >> $GITHUB_ENV
