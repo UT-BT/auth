@@ -13,7 +13,7 @@
 .gradient-ring {
   --gradient-color-1: #319CDB;
   --gradient-color-2: #F42335;
-  --ring-width: 1px;
+  --ring-width: 0.5px;
   --ring-offset-width: 2px;
   --animation-speed: 4s;
 
