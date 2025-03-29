@@ -42,7 +42,7 @@ func Base(title string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</title><script src=\"https://unpkg.com/htmx.org@1.9.10\"></script><script src=\"https://cdn.tailwindcss.com\"></script><link href=\"https://cdn.jsdelivr.net/npm/daisyui@4.7.2/dist/full.min.css\" rel=\"stylesheet\" type=\"text/css\"></head><body class=\"min-h-screen bg-base-200 flex items-center justify-center p-4\"><div class=\"card w-full sm:w-[450px] xl:w-[30rem] 2xl:w-[35rem] bg-base-100 shadow-xl\"><div class=\"card-body items-center text-center space-y-6\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</title><script src=\"https://unpkg.com/htmx.org@1.9.10\"></script><script src=\"https://cdn.tailwindcss.com\"></script><link href=\"https://cdn.jsdelivr.net/npm/daisyui@4.7.2/dist/full.min.css\" rel=\"stylesheet\" type=\"text/css\"><link rel=\"stylesheet\" href=\"/static/styles/styles.css\"></head><body class=\"min-h-screen bg-base-200 flex items-center justify-center p-4\"><div class=\"card w-full sm:w-[450px] xl:w-[30rem] 2xl:w-[35rem] bg-base-100 shadow-xl\"><div class=\"card-body items-center text-center space-y-6\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -50,7 +50,7 @@ func Base(title string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div></div></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div></div><footer class=\"absolute bottom-4 left-0 right-0 text-center text-sm text-gray-500\">Made with 💖 - © UTBT.net</footer></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

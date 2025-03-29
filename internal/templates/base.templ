@@ -10,6 +10,7 @@ templ Base(title string) {
         <script src="https://unpkg.com/htmx.org@1.9.10"></script>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/daisyui@4.7.2/dist/full.min.css" rel="stylesheet" type="text/css" />
+        <link rel="stylesheet" href="/static/styles/styles.css">
     </head>
     <body class="min-h-screen bg-base-200 flex items-center justify-center p-4">
         <div class="card w-full sm:w-[450px] xl:w-[30rem] 2xl:w-[35rem] bg-base-100 shadow-xl">
@@ -17,6 +18,9 @@ templ Base(title string) {
                 { children... }
             </div>
         </div>
+        <footer class="absolute bottom-4 left-0 right-0 text-center text-sm text-gray-500">
+            Made with 💖 - © UTBT.net
+        </footer>
     </body>
     </html>
 } 

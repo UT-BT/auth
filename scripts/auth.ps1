@@ -149,6 +149,13 @@ function Start-CleanCommand {
 
 function Start-BuildCommand {
     Write-Host "`nBuilding server...`n" -ForegroundColor White -BackgroundColor Black
+
+    Show-Status -Message "Generating HTMX templates" -ScriptBlock {
+        templ generate
+        if ($LASTEXITCODE -ne 0) {
+            throw "templ generate failed with exit code $LASTEXITCODE"
+        }
+    }
     
     $script:VERSION = Get-Version
     Write-Host "Building version: " -NoNewline -ForegroundColor White -BackgroundColor Black
