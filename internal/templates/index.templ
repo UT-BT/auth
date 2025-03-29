@@ -6,7 +6,7 @@ templ Index(user *types.User) {
     if user == nil {
         @Base("Login") {
             <div class="utbt-logo">
-                <div class="w-24 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
+                <div class="w-24 rounded-full gradient-ring">
                     <img src="/static/brands/utbt/utbt-circle-animated.gif" alt="UTBT Logo" class="rounded-full" />
                 </div>
             </div>
@@ -26,8 +26,8 @@ templ Index(user *types.User) {
     } else {
         @Base("Logged In (" + user.Username + ")") {
             <div class="avatar">
-                <div class="w-24 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
-                    <img src={user.AvatarURL} alt={user.Username + "'s avatar"} />
+                <div class="w-24 rounded-full gradient-ring">
+                    <img src={user.AvatarURL} alt={user.Username + "'s avatar"} class="rounded-full" />
                 </div>
             </div>
             <h1 class="text-3xl font-bold">Welcome back, {user.Username}!</h1>
