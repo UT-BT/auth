@@ -14,17 +14,16 @@ templ Base(title string) {
     </head>
     <body class="min-h-screen bg-base-200 flex items-center justify-center p-4">
         <div class="card w-full sm:w-[450px] xl:w-[30rem] 2xl:w-[35rem] bg-base-100 shadow-xl">
-            <div class="card-body items-center text-center space-y-6">
+            <div class="card-body items-center text-center space-y-4">
                 { children... }
             </div>
         </div>
         <footer class="absolute bottom-4 left-0 right-0 text-center text-sm text-gray-500">
-            <div>
-                Version 
+            <div> 
                 if IsDevVersion(Version) {
-                    <span class="text-error">{ Version }</span>
+                    <span class="utbt-red">{ Version }</span>
                 } else {
-                    <span>v{ Version }</span>
+                    <span class="utbt-blue">v{ Version }</span>
                 }
             </div>
             <div>
