@@ -1,8 +1,8 @@
 package templates
 import (
-    "github.com/UT-BT/auth/internal/types"
+    "github.com/UT-BT/auth/internal/auth/models"
 )
-templ Index(user *types.User) {
+templ Index(user *models.User) {
     if user == nil {
         @Base("Login") {
             <div class="utbt-logo">

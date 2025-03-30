@@ -8,9 +8,9 @@ import (
 	"strings"
 
 	"github.com/UT-BT/auth/internal/auth"
-	"github.com/UT-BT/auth/internal/supabase"
+	"github.com/UT-BT/auth/internal/auth/models"
+	"github.com/UT-BT/auth/internal/auth/services"
 	"github.com/UT-BT/auth/internal/templates"
-	"github.com/UT-BT/auth/internal/types"
 	supabasetypes "github.com/supabase-community/auth-go/types"
 
 	"github.com/go-chi/chi/v5"
@@ -19,16 +19,16 @@ import (
 
 // AuthHandler handles authentication-related HTTP requests
 type AuthHandler struct {
-	authClient      *auth.Client
-	cookieManager   *auth.CookieManager
-	supabaseService supabase.Service
+	authClient    *auth.Client
+	cookieManager *auth.CookieManager
+	hwidService   services.HWIDService
 }
 
-func NewAuthHandler(authClient *auth.Client, cookieManager *auth.CookieManager, supabaseService supabase.Service) *AuthHandler {
+func NewAuthHandler(authClient *auth.Client, cookieManager *auth.CookieManager, hwidService services.HWIDService) *AuthHandler {
 	return &AuthHandler{
-		authClient:      authClient,
-		cookieManager:   cookieManager,
-		supabaseService: supabaseService,
+		authClient:    authClient,
+		cookieManager: cookieManager,
+		hwidService:   hwidService,
 	}
 }
 
@@ -72,7 +72,7 @@ func (h *AuthHandler) indexPage(w http.ResponseWriter, r *http.Request) {
 
 	hwid := r.URL.Query().Get("hwid")
 	if hwid != "" {
-		h.supabaseService.RegisterHWID(user, hwid)
+		h.hwidService.RegisterHWID(user, hwid)
 		h.cookieManager.ClearPendingHWID(w)
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
@@ -80,7 +80,7 @@ func (h *AuthHandler) indexPage(w http.ResponseWriter, r *http.Request) {
 
 	pendingHWID, _ := h.cookieManager.GetPendingHWID(r)
 	if pendingHWID != "" {
-		h.supabaseService.RegisterHWID(user, pendingHWID)
+		h.hwidService.RegisterHWID(user, pendingHWID)
 		h.cookieManager.ClearPendingHWID(w)
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
@@ -126,7 +126,7 @@ func extractDiscordUsername(identity *supabasetypes.Identity) string {
 	return discordUsername
 }
 
-func (h *AuthHandler) getUserFromCookies(w http.ResponseWriter, r *http.Request) (*types.User, error) {
+func (h *AuthHandler) getUserFromCookies(w http.ResponseWriter, r *http.Request) (*models.User, error) {
 	accessToken, err := h.cookieManager.GetAccessToken(r)
 	if err != nil {
 		refreshToken, refreshErr := h.cookieManager.GetRefreshToken(r)
@@ -172,7 +172,7 @@ func (h *AuthHandler) getUserFromCookies(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	registeredHWIDRecord, err := h.supabaseService.GetRegisteredHWID(supabaseUser.ID.String())
+	registeredHWIDRecord, err := h.hwidService.GetRegisteredHWID(supabaseUser.ID.String())
 	if err != nil {
 		log.Warn().Err(err).Str("user_id", supabaseUser.ID.String()).Msg("Error fetching registered HWID")
 	}
@@ -189,7 +189,7 @@ func (h *AuthHandler) getUserFromCookies(w http.ResponseWriter, r *http.Request)
 		log.Warn().Err(err).Str("user_id", supabaseUser.ID.String()).Msg("Error fetching provider refresh token cookie")
 	}
 
-	return &types.User{
+	return &models.User{
 		ID:             supabaseUser.ID.String(),
 		DiscordUserID:  identity.ID,
 		Username:       discordUsername,

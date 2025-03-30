@@ -1,37 +1,38 @@
-package supabase
+package services
 
 import (
 	"fmt"
 
-	"github.com/UT-BT/auth/internal/types"
+	"github.com/UT-BT/auth/internal/auth/models"
+	"github.com/UT-BT/auth/internal/auth/repository"
 	"github.com/rs/zerolog/log"
 )
 
-// Service provides high-level operations for Supabase data
-type Service interface {
-	RegisterHWID(user *types.User, hwid string) (*RegisteredHWID, error)
-	GetRegisteredHWID(userID string) (*RegisteredHWID, error)
+// HWIDService provides high-level operations for HWID management
+type HWIDService interface {
+	RegisterHWID(user *models.User, hwid string) (*models.RegisteredHWID, error)
+	GetRegisteredHWID(userID string) (*models.RegisteredHWID, error)
 }
 
-type service struct {
-	repo Repository
+type hwidService struct {
+	repo repository.HWIDRepository
 }
 
-// NewService creates a new Supabase service instance
-func NewService(repo Repository) Service {
-	return &service{
+// NewHWIDService creates a new HWID service instance
+func NewHWIDService(repo repository.HWIDRepository) HWIDService {
+	return &hwidService{
 		repo: repo,
 	}
 }
 
-func (s *service) RegisterHWID(user *types.User, hwid string) (*RegisteredHWID, error) {
+func (s *hwidService) RegisterHWID(user *models.User, hwid string) (*models.RegisteredHWID, error) {
 	log.Debug().
 		Str("user_id", user.ID).
 		Str("discord_user_id", user.DiscordUserID).
 		Str("hwid", hwid).
 		Msg("Registering HWID for user")
 
-	input := &RegisteredHWIDInput{
+	input := &models.RegisteredHWIDInput{
 		UserID: user.ID,
 		HWID:   hwid,
 	}
@@ -56,7 +57,7 @@ func (s *service) RegisterHWID(user *types.User, hwid string) (*RegisteredHWID, 
 	return result, nil
 }
 
-func (s *service) GetRegisteredHWID(userID string) (*RegisteredHWID, error) {
+func (s *hwidService) GetRegisteredHWID(userID string) (*models.RegisteredHWID, error) {
 	log.Debug().Str("user_id", userID).Msg("Getting registered HWID for user")
 	hwid, err := s.repo.GetRegisteredHWID(userID)
 	if err != nil {

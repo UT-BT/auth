@@ -5,11 +5,12 @@ import (
 	"os"
 
 	"github.com/UT-BT/auth/internal/auth"
+	"github.com/UT-BT/auth/internal/auth/repository"
+	"github.com/UT-BT/auth/internal/auth/services"
 	"github.com/UT-BT/auth/internal/config"
 	"github.com/UT-BT/auth/internal/handlers"
 	"github.com/UT-BT/auth/internal/logger"
 	"github.com/UT-BT/auth/internal/middleware"
-	"github.com/UT-BT/auth/internal/supabase"
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
@@ -73,9 +74,9 @@ func main() {
 	log.Debug().Msg("Static file server configured")
 
 	cookieManager := auth.NewCookieManager(cfg)
-	supabaseRepository := supabase.NewRepository(cfg.SupabaseURL, cfg.SupabaseServiceKey)
-	supabaseService := supabase.NewService(supabaseRepository)
-	authHandler := handlers.NewAuthHandler(authClient, cookieManager, supabaseService)
+	hwidRepository := repository.NewHWIDRepository(cfg.SupabaseURL, cfg.SupabaseServiceKey)
+	hwidService := services.NewHWIDService(hwidRepository)
+	authHandler := handlers.NewAuthHandler(authClient, cookieManager, hwidService)
 	r.Mount("/", authHandler.Routes())
 	log.Debug().Msg("Routes mounted")
 
