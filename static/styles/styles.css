@@ -1,3 +1,42 @@
+:root {
+    --utbt-blue: #319CDB;
+    --utbt-red: #F42335;
+}
+
+.utbt-blue {
+    color: var(--utbt-blue);
+}
+
+.bg-utbt-blue {
+    background-color: var(--utbt-blue);
+}
+
+.utbt-red {
+    color: var(--utbt-red); 
+}
+
+.bg-utbt-red {
+    background-color: var(--utbt-red);
+}
+
+.btn-utbt-blue {
+    background-color: var(--utbt-blue);
+    color: white;
+}
+
+.btn-utbt-blue:hover {
+    background-color: color-mix(in srgb, var(--utbt-blue) 85%, black);
+}
+
+.btn-utbt-red {
+    background-color: var(--utbt-red);
+    color: white;
+}
+
+.btn-utbt-red:hover {
+    background-color: color-mix(in srgb, var(--utbt-red) 85%, black);
+}
+
 .tooltip-container {
     position: relative;
     display: inline-block;
@@ -54,8 +93,8 @@
 }
 
 .gradient-ring {
-  --gradient-color-1: #319CDB;
-  --gradient-color-2: #F42335;
+  --gradient-color-1: var(--utbt-blue);
+  --gradient-color-2: var(--utbt-red);
   --ring-width: 0.5px;
   --ring-offset-width: 2px;
   --animation-speed: 4s;
