@@ -11,6 +11,7 @@ import (
 	"github.com/UT-BT/auth/internal/handlers"
 	"github.com/UT-BT/auth/internal/logger"
 	"github.com/UT-BT/auth/internal/middleware"
+	"github.com/UT-BT/auth/internal/templates"
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
@@ -24,6 +25,8 @@ func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Warn().Err(err).Msg("Warning: Error loading .env file")
 	}
+
+	templates.Version = version
 
 	cfg, err := config.Load()
 	if err != nil {

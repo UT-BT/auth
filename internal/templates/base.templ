@@ -19,7 +19,17 @@ templ Base(title string) {
             </div>
         </div>
         <footer class="absolute bottom-4 left-0 right-0 text-center text-sm text-gray-500">
-            Made with 💖 - © UTBT.net
+            <div>
+                Version 
+                if IsDevVersion(Version) {
+                    <span class="text-error">{ Version }</span>
+                } else {
+                    <span>v{ Version }</span>
+                }
+            </div>
+            <div>
+                <b>Made with 💖 - © UTBT.net</b>
+            </div>
         </footer>
     </body>
     </html>
