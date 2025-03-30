@@ -50,6 +50,8 @@ func (r *repository) UpsertRegisteredHWID(input *RegisteredHWIDInput) (*Register
 	req.Header.Set("Authorization", "Bearer "+r.serviceKey)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Prefer", "resolution=merge-duplicates,return=representation")
+	req.Header.Set("Accept-Profile", "auth")
+	req.Header.Set("Content-Profile", "auth")
 	q := req.URL.Query()
 	q.Add("on_conflict", "user_id")
 	req.URL.RawQuery = q.Encode()
@@ -90,6 +92,8 @@ func (r *repository) GetRegisteredHWID(userID string) (*RegisteredHWID, error) {
 	req.Header.Set("apikey", r.serviceKey)
 	req.Header.Set("Authorization", "Bearer "+r.serviceKey)
 	req.Header.Set("Accept", "application/vnd.pgrst.object+json")
+	req.Header.Set("Accept-Profile", "auth")
+	req.Header.Set("Content-Profile", "auth")
 
 	q := req.URL.Query()
 	q.Add("select", "*")
