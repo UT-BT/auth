@@ -1,4 +1,4 @@
-package supabase
+package models
 
 import (
 	"time"

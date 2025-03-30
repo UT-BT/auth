@@ -1,4 +1,4 @@
-package supabase
+package repository
 
 import (
 	"bytes"
@@ -7,32 +7,32 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/UT-BT/auth/internal/auth/models"
 	"github.com/rs/zerolog/log"
 )
 
-// Repository defines the interface for Supabase database operations
-type Repository interface {
-	UpsertRegisteredHWID(input *RegisteredHWIDInput) (*RegisteredHWID, error)
-	GetRegisteredHWID(userID string) (*RegisteredHWID, error)
+// HWIDRepository defines the interface for handling hardware ID operations
+type HWIDRepository interface {
+	UpsertRegisteredHWID(input *models.RegisteredHWIDInput) (*models.RegisteredHWID, error)
+	GetRegisteredHWID(userID string) (*models.RegisteredHWID, error)
 }
 
-// repository implements the Repository interface
-type repository struct {
+type hwidRepository struct {
 	baseURL    string
 	serviceKey string
 	client     *http.Client
 }
 
-// NewRepository creates a new Supabase repository instance
-func NewRepository(baseURL, serviceKey string) Repository {
-	return &repository{
+// NewHWIDRepository creates a new HWID repository instance
+func NewHWIDRepository(baseURL, serviceKey string) HWIDRepository {
+	return &hwidRepository{
 		baseURL:    baseURL,
 		serviceKey: serviceKey,
 		client:     &http.Client{},
 	}
 }
 
-func (r *repository) UpsertRegisteredHWID(input *RegisteredHWIDInput) (*RegisteredHWID, error) {
+func (r *hwidRepository) UpsertRegisteredHWID(input *models.RegisteredHWIDInput) (*models.RegisteredHWID, error) {
 	endpoint := fmt.Sprintf("%s/rest/v1/registered_hwids", r.baseURL)
 
 	body, err := json.Marshal(input)
@@ -45,11 +45,12 @@ func (r *repository) UpsertRegisteredHWID(input *RegisteredHWIDInput) (*Register
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	// Set headers
 	req.Header.Set("apikey", r.serviceKey)
 	req.Header.Set("Authorization", "Bearer "+r.serviceKey)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Prefer", "resolution=merge-duplicates,return=representation")
+	req.Header.Set("Accept-Profile", "auth")
+	req.Header.Set("Content-Profile", "auth")
 	q := req.URL.Query()
 	q.Add("on_conflict", "user_id")
 	req.URL.RawQuery = q.Encode()
@@ -68,7 +69,7 @@ func (r *repository) UpsertRegisteredHWID(input *RegisteredHWIDInput) (*Register
 	respBody, _ := io.ReadAll(resp.Body)
 	log.Debug().Msgf("Response body: %s", string(respBody))
 
-	var results []RegisteredHWID
+	var results []models.RegisteredHWID
 	if err := json.Unmarshal(respBody, &results); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
@@ -80,7 +81,7 @@ func (r *repository) UpsertRegisteredHWID(input *RegisteredHWIDInput) (*Register
 	return &results[0], nil
 }
 
-func (r *repository) GetRegisteredHWID(userID string) (*RegisteredHWID, error) {
+func (r *hwidRepository) GetRegisteredHWID(userID string) (*models.RegisteredHWID, error) {
 	endpoint := fmt.Sprintf("%s/rest/v1/registered_hwids", r.baseURL)
 	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
 	if err != nil {
@@ -90,6 +91,8 @@ func (r *repository) GetRegisteredHWID(userID string) (*RegisteredHWID, error) {
 	req.Header.Set("apikey", r.serviceKey)
 	req.Header.Set("Authorization", "Bearer "+r.serviceKey)
 	req.Header.Set("Accept", "application/vnd.pgrst.object+json")
+	req.Header.Set("Accept-Profile", "auth")
+	req.Header.Set("Content-Profile", "auth")
 
 	q := req.URL.Query()
 	q.Add("select", "*")
@@ -111,7 +114,7 @@ func (r *repository) GetRegisteredHWID(userID string) (*RegisteredHWID, error) {
 		return nil, fmt.Errorf("unexpected status code %d: %s", resp.StatusCode, string(body))
 	}
 
-	var result RegisteredHWID
+	var result models.RegisteredHWID
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}

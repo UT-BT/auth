@@ -1,8 +1,8 @@
 package templates
 import (
-    "github.com/UT-BT/auth/internal/types"
+    "github.com/UT-BT/auth/internal/auth/models"
 )
-templ Index(user *types.User) {
+templ Index(user *models.User) {
     if user == nil {
         @Base("Login") {
             <div class="utbt-logo">
@@ -51,11 +51,20 @@ templ Index(user *types.User) {
                     <img src={user.AvatarURL} alt={user.Username + "'s avatar"} class="rounded-full" />
                 </div>
             </div>
-            <h1 class="text-3xl font-bold">Welcome back, {user.Username}!</h1>
+            <h1 class="text-3xl font-bold">Welcome, {user.Username}!</h1>
+            <div class="w-full flex justify-center">
+                <button
+                    class="btn btn-ghost btn-sm"
+                    onclick="this.textContent = this.textContent === 'Show Hardware ID' ? this.getAttribute('data-hwid') : 'Show Hardware ID'"
+                    data-hwid={user.RegisteredHWID}
+                >
+                    Show Hardware ID
+                </button>
+            </div>
             <div class="w-full flex flex-col items-center space-y-4">
                 if user.RegisteredHWID != "" && user.GameToken != "" {
                     <button
-                        class="btn btn-secondary w-[75%] shadow-md hover:shadow-lg transition-all duration-200"
+                        class="btn btn-utbt-blue w-[75%] shadow-md hover:shadow-lg transition-all duration-200"
                         onclick="window.copyToClipboard()"
                     >
                         Copy Game Server Token
@@ -63,7 +72,7 @@ templ Index(user *types.User) {
                 } else {
                     <div class="tooltip-container w-[75%]">
                         <button
-                            class="btn btn-secondary w-full shadow-md opacity-50 cursor-not-allowed"
+                            class="btn btn-utbt-blue w-full shadow-md opacity-50 cursor-not-allowed"
                             disabled
                             id="gameTokenButton"
                             game-token={ user.GameToken }
@@ -77,7 +86,7 @@ templ Index(user *types.User) {
                 }
                 <a
                     href="/logout"
-                    class="btn btn-error w-[75%] shadow-md hover:shadow-lg transition-all duration-200"
+                    class="btn btn-utbt-red w-[75%] shadow-md hover:shadow-lg transition-all duration-200"
                 >
                     Logout
                 </a>
