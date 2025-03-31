@@ -460,6 +460,9 @@ func (h *AuthHandler) refreshTokenIfNeeded(w http.ResponseWriter, r *http.Reques
 	}
 
 	token, err := jwt.ParseWithClaims(accessToken, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
 		return []byte(h.cfg.SupabaseJWTSecret), nil
 	})
 
