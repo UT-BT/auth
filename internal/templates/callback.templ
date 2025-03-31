@@ -23,7 +23,6 @@ templ Callback() {
                     access_token: params.access_token,
                     refresh_token: params.refresh_token,
                     expires_at: expiresAt,
-                    provider_token: params.provider_token,
                     provider_refresh_token: params.provider_refresh_token
                 };
                 localStorage.setItem('auth_tokens', JSON.stringify(clientTokens));
@@ -37,7 +36,6 @@ templ Callback() {
                     },
                     body: JSON.stringify({
                         refresh_token: params.refresh_token,
-                        provider_token: params.provider_token,
                         provider_refresh_token: params.provider_refresh_token
                     }),
                     credentials: 'include'

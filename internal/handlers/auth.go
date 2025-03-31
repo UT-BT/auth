@@ -10,7 +10,9 @@ import (
 	"github.com/UT-BT/auth/internal/auth"
 	"github.com/UT-BT/auth/internal/auth/models"
 	"github.com/UT-BT/auth/internal/auth/services"
+	"github.com/UT-BT/auth/internal/config"
 	"github.com/UT-BT/auth/internal/templates"
+	"github.com/golang-jwt/jwt/v5"
 	supabasetypes "github.com/supabase-community/auth-go/types"
 
 	"github.com/go-chi/chi/v5"
@@ -22,13 +24,15 @@ type AuthHandler struct {
 	authClient    *auth.Client
 	cookieManager *auth.CookieManager
 	hwidService   services.HWIDService
+	cfg           *config.Config
 }
 
-func NewAuthHandler(authClient *auth.Client, cookieManager *auth.CookieManager, hwidService services.HWIDService) *AuthHandler {
+func NewAuthHandler(authClient *auth.Client, cookieManager *auth.CookieManager, hwidService services.HWIDService, cfg *config.Config) *AuthHandler {
 	return &AuthHandler{
 		authClient:    authClient,
 		cookieManager: cookieManager,
 		hwidService:   hwidService,
+		cfg:           cfg,
 	}
 }
 
@@ -47,6 +51,7 @@ func (h *AuthHandler) Routes() chi.Router {
 		r.Get("/verify", h.verifyToken)
 		r.Post("/logout", h.logout)
 		r.Post("/store-auth", h.storeAuth)
+		r.Post("/refresh-if-needed", h.refreshTokenIfNeeded)
 	})
 
 	return r
@@ -144,6 +149,83 @@ func (h *AuthHandler) getUserFromCookies(w http.ResponseWriter, r *http.Request)
 		accessToken = newToken.AccessToken
 	}
 
+	roles := []string{} // Default
+
+	type CustomClaims struct {
+		AppMetadata struct {
+			Roles          []string `json:"roles"`
+			RolesUpdatedAt int64    `json:"roles_updated_at"`
+		} `json:"app_metadata"`
+		jwt.RegisteredClaims
+	}
+
+	token, err := jwt.ParseWithClaims(accessToken, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(h.cfg.SupabaseJWTSecret), nil
+	})
+
+	if err == nil && token.Valid {
+		if claims, ok := token.Claims.(*CustomClaims); ok {
+			log.Debug().Interface("claims", claims).Msg("Successfully parsed JWT claims")
+
+			supabaseUser, err := h.authClient.GetUserFromToken(accessToken)
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to get user data for role timestamp check")
+				return nil, err
+			}
+
+			currentTimestamp := int64(0)
+			if supabaseUser.AppMetadata != nil {
+				if timestamp, ok := supabaseUser.AppMetadata["roles_updated_at"].(float64); ok {
+					currentTimestamp = int64(timestamp)
+				}
+			}
+
+			if currentTimestamp > claims.AppMetadata.RolesUpdatedAt {
+				log.Info().
+					Str("user_id", supabaseUser.ID.String()).
+					Int64("token_timestamp", claims.AppMetadata.RolesUpdatedAt).
+					Int64("current_timestamp", currentTimestamp).
+					Msg("Roles have been updated, refreshing token")
+
+				refreshToken, refreshErr := h.cookieManager.GetRefreshToken(r)
+				if refreshErr != nil {
+					log.Error().Err(refreshErr).Msg("Failed to get refresh token for role update")
+					h.cookieManager.ClearAllAuthCookies(w)
+					return nil, errors.New("roles have been updated, please re-authenticate")
+				}
+
+				newToken, refreshErr := h.authClient.RefreshToken(refreshToken)
+				if refreshErr != nil {
+					log.Error().Err(refreshErr).Msg("Failed to refresh token for role update")
+					h.cookieManager.ClearAllAuthCookies(w)
+					return nil, errors.New("roles have been updated, please re-authenticate")
+				}
+
+				h.cookieManager.SetAuthCookies(w, newToken)
+				accessToken = newToken.AccessToken
+
+				supabaseUser, err = h.authClient.GetUserFromToken(accessToken)
+				if err != nil {
+					log.Error().Err(err).Msg("Failed to get updated user data after token refresh")
+					return nil, err
+				}
+			}
+
+			if len(claims.AppMetadata.Roles) > 0 {
+				roles = claims.AppMetadata.Roles
+			} else {
+				log.Warn().Msg("JWT claims did not contain 'roles' in app_metadata, defaulting roles")
+			}
+		} else {
+			log.Error().Msg("Failed to assert JWT claims to CustomClaims type, defaulting roles")
+		}
+	} else {
+		log.Warn().Err(err).Msg("Failed to parse JWT or token is invalid, defaulting roles. GetUserFromToken will verify.")
+	}
+
 	supabaseUser, err := h.authClient.GetUserFromToken(accessToken)
 	if err != nil {
 		h.cookieManager.ClearAllAuthCookies(w)
@@ -196,6 +278,7 @@ func (h *AuthHandler) getUserFromCookies(w http.ResponseWriter, r *http.Request)
 		AvatarURL:      avatarURL,
 		RegisteredHWID: hwid,
 		GameToken:      gameToken,
+		Roles:          roles,
 	}, nil
 }
 
@@ -309,7 +392,7 @@ func (h *AuthHandler) storeAuth(w http.ResponseWriter, r *http.Request) {
 		Value:    token,
 		Domain:   domain,
 		Path:     "/",
-		MaxAge:   3600, // 1 hour
+		MaxAge:   900, // 15 minutes
 		HttpOnly: true,
 		Secure:   true,
 		SameSite: http.SameSiteLaxMode,
@@ -353,4 +436,98 @@ func (h *AuthHandler) storeAuth(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+type RefreshResponse struct {
+	TokenRefreshed bool   `json:"token_refreshed"`
+	AccessToken    string `json:"access_token,omitempty"`
+	Error          string `json:"error,omitempty"`
+}
+
+func (h *AuthHandler) refreshTokenIfNeeded(w http.ResponseWriter, r *http.Request) {
+	accessToken, err := h.authClient.ExtractTokenFromHeader(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	type CustomClaims struct {
+		AppMetadata struct {
+			Roles          []string `json:"roles"`
+			RolesUpdatedAt int64    `json:"roles_updated_at"`
+		} `json:"app_metadata"`
+		jwt.RegisteredClaims
+	}
+
+	token, err := jwt.ParseWithClaims(accessToken, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(h.cfg.SupabaseJWTSecret), nil
+	})
+
+	if err != nil || !token.Valid {
+		json.NewEncoder(w).Encode(RefreshResponse{
+			TokenRefreshed: false,
+			Error:          "Invalid token",
+		})
+		return
+	}
+
+	claims, ok := token.Claims.(*CustomClaims)
+	if !ok {
+		json.NewEncoder(w).Encode(RefreshResponse{
+			TokenRefreshed: false,
+			Error:          "Invalid token claims",
+		})
+		return
+	}
+
+	supabaseUser, err := h.authClient.GetUserFromToken(accessToken)
+	if err != nil {
+		json.NewEncoder(w).Encode(RefreshResponse{
+			TokenRefreshed: false,
+			Error:          "Failed to get user data",
+		})
+		return
+	}
+
+	currentTimestamp := int64(0)
+	if supabaseUser.AppMetadata != nil {
+		if timestamp, ok := supabaseUser.AppMetadata["roles_updated_at"].(float64); ok {
+			currentTimestamp = int64(timestamp)
+		}
+	}
+
+	if currentTimestamp <= claims.AppMetadata.RolesUpdatedAt {
+		json.NewEncoder(w).Encode(RefreshResponse{
+			TokenRefreshed: false,
+		})
+		return
+	}
+
+	var req struct {
+		RefreshToken string `json:"refresh_token"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		json.NewEncoder(w).Encode(RefreshResponse{
+			TokenRefreshed: false,
+			Error:          "Invalid request body",
+		})
+		return
+	}
+
+	newToken, err := h.authClient.RefreshToken(req.RefreshToken)
+	if err != nil {
+		json.NewEncoder(w).Encode(RefreshResponse{
+			TokenRefreshed: false,
+			Error:          "Failed to refresh token",
+		})
+		return
+	}
+
+	json.NewEncoder(w).Encode(RefreshResponse{
+		TokenRefreshed: true,
+		AccessToken:    newToken.AccessToken,
+	})
 }
