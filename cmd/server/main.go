@@ -77,8 +77,16 @@ func main() {
 	log.Debug().Msg("Static file server configured")
 
 	cookieManager := auth.NewCookieManager(cfg)
-	hwidRepository := repository.NewHWIDRepository(cfg.SupabaseURL, cfg.SupabaseServiceKey)
+
+	dbPool, err := repository.NewDBPool(cfg.DatabaseURL)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to initialize database connection")
+	}
+	defer dbPool.Close()
+
+	hwidRepository := repository.NewHWIDRepository(dbPool)
 	hwidService := services.NewHWIDService(hwidRepository)
+
 	authHandler := handlers.NewAuthHandler(authClient, cookieManager, hwidService, cfg)
 	r.Mount("/", authHandler.Routes())
 	log.Debug().Msg("Routes mounted")

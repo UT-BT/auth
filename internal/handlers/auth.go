@@ -51,7 +51,6 @@ func (h *AuthHandler) Routes() chi.Router {
 		r.Get("/verify", h.verifyToken)
 		r.Post("/logout", h.logout)
 		r.Post("/store-auth", h.storeAuth)
-		r.Post("/refresh-if-needed", h.refreshTokenIfNeeded)
 	})
 
 	return r
@@ -77,16 +76,66 @@ func (h *AuthHandler) indexPage(w http.ResponseWriter, r *http.Request) {
 
 	hwid := r.URL.Query().Get("hwid")
 	if hwid != "" {
-		h.hwidService.RegisterHWID(user, hwid)
+		_, needsRefresh, err := h.hwidService.RegisterHWID(user, hwid)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to register HWID")
+			http.Error(w, "Failed to register HWID", http.StatusInternalServerError)
+			return
+		}
+
 		h.cookieManager.ClearPendingHWID(w)
+
+		if needsRefresh {
+			refreshToken, err := h.cookieManager.GetRefreshToken(r)
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to get refresh token for HWID update")
+				http.Error(w, "Failed to refresh token", http.StatusInternalServerError)
+				return
+			}
+
+			newToken, err := h.authClient.RefreshToken(refreshToken)
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to refresh token for HWID update")
+				http.Error(w, "Failed to refresh token", http.StatusInternalServerError)
+				return
+			}
+
+			h.cookieManager.SetAuthCookies(w, newToken)
+		}
+
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
 
 	pendingHWID, _ := h.cookieManager.GetPendingHWID(r)
 	if pendingHWID != "" {
-		h.hwidService.RegisterHWID(user, pendingHWID)
+		_, needsRefresh, err := h.hwidService.RegisterHWID(user, pendingHWID)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to register pending HWID")
+			http.Error(w, "Failed to register HWID", http.StatusInternalServerError)
+			return
+		}
+
 		h.cookieManager.ClearPendingHWID(w)
+
+		if needsRefresh {
+			refreshToken, err := h.cookieManager.GetRefreshToken(r)
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to get refresh token for HWID update")
+				http.Error(w, "Failed to refresh token", http.StatusInternalServerError)
+				return
+			}
+
+			newToken, err := h.authClient.RefreshToken(refreshToken)
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to refresh token for HWID update")
+				http.Error(w, "Failed to refresh token", http.StatusInternalServerError)
+				return
+			}
+
+			h.cookieManager.SetAuthCookies(w, newToken)
+		}
+
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
@@ -155,6 +204,8 @@ func (h *AuthHandler) getUserFromCookies(w http.ResponseWriter, r *http.Request)
 		AppMetadata struct {
 			Roles          []string `json:"roles"`
 			RolesUpdatedAt int64    `json:"roles_updated_at"`
+			HWID           string   `json:"hwid"`
+			HWIDUpdatedAt  int64    `json:"hwid_updated_at"`
 		} `json:"app_metadata"`
 		jwt.RegisteredClaims
 	}
@@ -219,6 +270,13 @@ func (h *AuthHandler) getUserFromCookies(w http.ResponseWriter, r *http.Request)
 			} else {
 				log.Warn().Msg("JWT claims did not contain 'roles' in app_metadata, defaulting roles")
 			}
+
+			hwid := claims.AppMetadata.HWID
+			if hwid == "" {
+				log.Debug().Msg("No HWID found in JWT claims")
+			} else {
+				log.Debug().Str("hwid", hwid).Msg("Found HWID in JWT claims")
+			}
 		} else {
 			log.Error().Msg("Failed to assert JWT claims to CustomClaims type, defaulting roles")
 		}
@@ -246,7 +304,14 @@ func (h *AuthHandler) getUserFromCookies(w http.ResponseWriter, r *http.Request)
 
 	identity := supabaseUser.Identities[discordIdentityIndex]
 	discordUsername := extractDiscordUsername(&identity)
+	hwid := ""
 
+	if supabaseUser.AppMetadata != nil {
+		if storedHWID, ok := supabaseUser.AppMetadata["hwid"].(string); ok {
+			hwid = storedHWID
+			log.Debug().Str("hwid", hwid).Msg("Found HWID in user metadata")
+		}
+	}
 	avatarURL := ""
 	if supabaseUser.UserMetadata != nil {
 		if avatar, ok := supabaseUser.UserMetadata["avatar_url"].(string); ok {
@@ -254,13 +319,11 @@ func (h *AuthHandler) getUserFromCookies(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	registeredHWIDRecord, err := h.hwidService.GetRegisteredHWID(supabaseUser.ID.String())
-	if err != nil {
-		log.Warn().Err(err).Str("user_id", supabaseUser.ID.String()).Msg("Error fetching registered HWID")
-	}
-	hwid := ""
-	if registeredHWIDRecord != nil {
-		hwid = registeredHWIDRecord.HWID
+	if hwid == "" && supabaseUser.AppMetadata != nil {
+		if storedHWID, ok := supabaseUser.AppMetadata["hwid"].(string); ok {
+			hwid = storedHWID
+			log.Debug().Str("hwid", hwid).Msg("Found HWID in user metadata")
+		}
 	}
 
 	providerRefreshToken, err := h.cookieManager.GetProviderRefreshToken(r)
@@ -455,6 +518,8 @@ func (h *AuthHandler) refreshTokenIfNeeded(w http.ResponseWriter, r *http.Reques
 		AppMetadata struct {
 			Roles          []string `json:"roles"`
 			RolesUpdatedAt int64    `json:"roles_updated_at"`
+			HWID           string   `json:"hwid"`
+			HWIDUpdatedAt  int64    `json:"hwid_updated_at"`
 		} `json:"app_metadata"`
 		jwt.RegisteredClaims
 	}
