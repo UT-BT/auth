@@ -58,8 +58,8 @@ func (h *AuthHandler) Routes() chi.Router {
 }
 
 func (h *AuthHandler) indexPage(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Query().Get("error") != "" {
-		templates.Error().Render(r.Context(), w)
+	if value := r.URL.Query().Get("error"); value != "" {
+		templates.Error(value).Render(r.Context(), w)
 		return
 	}
 
