@@ -45,18 +45,18 @@ func main() {
 		Str("port", cfg.Port).
 		Msg("Starting server")
 
+	rateLimiter := middleware.NewRateLimiter()
+
 	authClient := auth.NewClient(cfg)
 	log.Debug().Msg("Auth client initialized")
 
 	r := chi.NewRouter()
 
-	// Add request ID middleware
 	r.Use(chiMiddleware.RequestID)
 	r.Use(chiMiddleware.Recoverer)
 	r.Use(chiMiddleware.RealIP)
-
-	// Add our custom logger middleware
 	r.Use(middleware.Logger)
+	r.Use(rateLimiter.RateLimit)
 
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"https://*.utbt.net", "http://localhost:*", "http://127.0.0.1:*"},
