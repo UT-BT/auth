@@ -76,10 +76,17 @@ func (h *AuthHandler) indexPage(w http.ResponseWriter, r *http.Request) {
 
 	hwid := r.URL.Query().Get("hwid")
 	if hwid != "" {
+		err := h.hwidService.ValidateHWID(hwid)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to validate HWID")
+			templates.Error("invalid_hwid").Render(r.Context(), w)
+			return
+		}
+
 		_, needsRefresh, err := h.hwidService.RegisterHWID(user, hwid)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to register HWID")
-			http.Error(w, "Failed to register HWID", http.StatusInternalServerError)
+			templates.Error("internal_server_error").Render(r.Context(), w)
 			return
 		}
 
@@ -89,14 +96,14 @@ func (h *AuthHandler) indexPage(w http.ResponseWriter, r *http.Request) {
 			refreshToken, err := h.cookieManager.GetRefreshToken(r)
 			if err != nil {
 				log.Error().Err(err).Msg("Failed to get refresh token for HWID update")
-				http.Error(w, "Failed to refresh token", http.StatusInternalServerError)
+				templates.Error("internal_server_error").Render(r.Context(), w)
 				return
 			}
 
 			newToken, err := h.authClient.RefreshToken(refreshToken)
 			if err != nil {
 				log.Error().Err(err).Msg("Failed to refresh token for HWID update")
-				http.Error(w, "Failed to refresh token", http.StatusInternalServerError)
+				templates.Error("internal_server_error").Render(r.Context(), w)
 				return
 			}
 
@@ -109,10 +116,17 @@ func (h *AuthHandler) indexPage(w http.ResponseWriter, r *http.Request) {
 
 	pendingHWID, _ := h.cookieManager.GetPendingHWID(r)
 	if pendingHWID != "" {
+		err := h.hwidService.ValidateHWID(pendingHWID)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to validate pending HWID")
+			templates.Error("invalid_hwid").Render(r.Context(), w)
+			return
+		}
+
 		_, needsRefresh, err := h.hwidService.RegisterHWID(user, pendingHWID)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to register pending HWID")
-			http.Error(w, "Failed to register HWID", http.StatusInternalServerError)
+			templates.Error("internal_server_error").Render(r.Context(), w)
 			return
 		}
 
@@ -122,14 +136,14 @@ func (h *AuthHandler) indexPage(w http.ResponseWriter, r *http.Request) {
 			refreshToken, err := h.cookieManager.GetRefreshToken(r)
 			if err != nil {
 				log.Error().Err(err).Msg("Failed to get refresh token for HWID update")
-				http.Error(w, "Failed to refresh token", http.StatusInternalServerError)
+				templates.Error("internal_server_error").Render(r.Context(), w)
 				return
 			}
 
 			newToken, err := h.authClient.RefreshToken(refreshToken)
 			if err != nil {
 				log.Error().Err(err).Msg("Failed to refresh token for HWID update")
-				http.Error(w, "Failed to refresh token", http.StatusInternalServerError)
+				templates.Error("internal_server_error").Render(r.Context(), w)
 				return
 			}
 
