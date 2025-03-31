@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"regexp"
 
 	"github.com/UT-BT/auth/internal/auth/models"
 	"github.com/UT-BT/auth/internal/auth/repository"
@@ -10,8 +11,9 @@ import (
 
 // HWIDService provides high-level operations for HWID management
 type HWIDService interface {
-	RegisterHWID(user *models.User, hwid string) (*models.RegisteredHWID, error)
+	RegisterHWID(user *models.User, hwid string) (*models.RegisteredHWID, bool, error)
 	GetRegisteredHWID(userID string) (*models.RegisteredHWID, error)
+	ValidateHWID(hwid string) error
 }
 
 type hwidService struct {
@@ -25,7 +27,7 @@ func NewHWIDService(repo repository.HWIDRepository) HWIDService {
 	}
 }
 
-func (s *hwidService) RegisterHWID(user *models.User, hwid string) (*models.RegisteredHWID, error) {
+func (s *hwidService) RegisterHWID(user *models.User, hwid string) (*models.RegisteredHWID, bool, error) {
 	log.Debug().
 		Str("user_id", user.ID).
 		Str("discord_user_id", user.DiscordUserID).
@@ -45,16 +47,19 @@ func (s *hwidService) RegisterHWID(user *models.User, hwid string) (*models.Regi
 			Str("discord_user_id", user.DiscordUserID).
 			Str("hwid", hwid).
 			Msg("Failed to register HWID")
-		return nil, fmt.Errorf("failed to register HWID: %w", err)
+		return nil, false, fmt.Errorf("failed to register HWID: %w", err)
 	}
+
+	needsRefresh := user.RegisteredHWID != hwid
 
 	log.Info().
 		Str("user_id", user.ID).
 		Str("discord_user_id", user.DiscordUserID).
 		Str("hwid", hwid).
+		Bool("needs_refresh", needsRefresh).
 		Msg("Successfully registered HWID")
 
-	return result, nil
+	return result, needsRefresh, nil
 }
 
 func (s *hwidService) GetRegisteredHWID(userID string) (*models.RegisteredHWID, error) {
@@ -72,4 +77,21 @@ func (s *hwidService) GetRegisteredHWID(userID string) (*models.RegisteredHWID, 
 
 	log.Debug().Str("user_id", userID).Str("hwid", hwid.HWID).Msg("Successfully retrieved registered HWID")
 	return hwid, nil
+}
+
+func (s *hwidService) ValidateHWID(hwid string) error {
+	if len(hwid) != 32 {
+		return fmt.Errorf("invalid HWID length")
+	}
+
+	match, err := regexp.MatchString("^[0-9A-Z]+$", hwid)
+	if err != nil {
+		return fmt.Errorf("failed to validate HWID: %w", err)
+	}
+
+	if !match {
+		return fmt.Errorf("invalid HWID characters")
+	}
+
+	return nil
 }

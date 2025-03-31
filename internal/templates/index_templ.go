@@ -144,48 +144,58 @@ func Index(user *models.User) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "!</h1><div class=\"w-full flex justify-center\"><button class=\"btn btn-ghost btn-sm\" onclick=\"this.textContent = this.textContent === &#39;Show Hardware ID&#39; ? this.getAttribute(&#39;data-hwid&#39;) : &#39;Show Hardware ID&#39;\" data-hwid=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "!</h1><div class=\"w-full flex justify-center\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var9 string
-				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(user.RegisteredHWID)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/index.templ`, Line: 66, Col: 50}
+				if user.RegisteredHWID != "" {
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<button class=\"btn btn-ghost btn-sm\" onclick=\"this.textContent = this.textContent === &#39;Show Hardware ID&#39; ? this.getAttribute(&#39;data-hwid&#39;) : &#39;Show Hardware ID&#39;\" data-hwid=\"")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var9 string
+					templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(user.RegisteredHWID)
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/index.templ`, Line: 67, Col: 54}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\">Show Hardware ID</button>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\">Show Hardware ID</button></div><div class=\"w-full flex flex-col items-center space-y-4\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</div><div class=\"w-full flex flex-col items-center space-y-4\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if user.RegisteredHWID != "" && user.GameToken != "" {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<button class=\"btn btn-utbt-blue w-[75%] shadow-md hover:shadow-lg transition-all duration-200\" onclick=\"window.copyToClipboard()\">Copy Game Server Token</button> ")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<button class=\"btn btn-utbt-blue w-[75%] shadow-md hover:shadow-lg transition-all duration-200\" onclick=\"window.copyToClipboard()\">Copy Game Server Token</button> ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				} else {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<div class=\"tooltip-container w-[75%]\"><button class=\"btn btn-utbt-blue w-full shadow-md opacity-50 cursor-not-allowed\" disabled id=\"gameTokenButton\" game-token=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<div class=\"tooltip-container w-[75%]\"><button class=\"btn btn-utbt-blue w-full shadow-md opacity-50 cursor-not-allowed\" disabled id=\"gameTokenButton\" game-token=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var10 string
 					templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(user.GameToken)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/index.templ`, Line: 85, Col: 55}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/index.templ`, Line: 87, Col: 55}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\">Copy Game Server Token</button> <span class=\"tooltip-text\">Open the login page from your game in order to get your game token!</span></div>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\">Copy Game Server Token</button> <span class=\"tooltip-text\">Open the login page from your game in order to get your game token!</span></div>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<a href=\"/logout\" class=\"btn btn-utbt-red w-[75%] shadow-md hover:shadow-lg transition-all duration-200\">Logout</a></div><dialog id=\"instructionModal\" class=\"modal\"><div class=\"modal-box max-w-3xl\"><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form><h2 class=\"text-xl font-semibold text-base-content mb-4\">Instructions</h2><p class=\"text-base-content/80 mb-4\"><b>Your token has been copied to your clipboard.</b><br><br>To complete the authentication, please head back into your Unreal Tournament client and follow these steps:<ul class=\"list-disc list-inside ml-4 space-y-1 my-4\"><li>Connect to a UTBT server and wait for the login screen.</li><li>Click <b>Paste Token</b>.</li><li>Click <b>Reconnect</b>.</li></ul></p><div class=\"divider my-4\"></div><img src=\"static/brands/utbt/login.png\" alt=\"UTBT Login Screen\" class=\"max-w-full rounded-lg shadow-md mb-4 mt-4 mx-auto\"><p class=\"text-warning font-semibold text-center mb-6\">Please ensure you keep your token secure and avoid sharing it with others.</p><div class=\"modal-action justify-center\"><form method=\"dialog\"><button class=\"btn btn-primary\">Got it!</button></form></div></div><form method=\"dialog\" class=\"modal-backdrop\"><button>close</button></form></dialog>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<a href=\"/logout\" class=\"btn btn-utbt-red w-[75%] shadow-md hover:shadow-lg transition-all duration-200\">Logout</a></div><dialog id=\"instructionModal\" class=\"modal\"><div class=\"modal-box max-w-3xl\"><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form><h2 class=\"text-xl font-semibold text-base-content mb-4\">Instructions</h2><p class=\"text-base-content/80 mb-4\"><b>Your token has been copied to your clipboard.</b><br><br>To complete the authentication, please head back into your Unreal Tournament client and follow these steps:<ul class=\"list-disc list-inside ml-4 space-y-1 my-4\"><li>Connect to a UTBT server and wait for the login screen.</li><li>Click <b>Paste Token</b>.</li><li>Click <b>Reconnect</b>.</li></ul></p><div class=\"divider my-4\"></div><img src=\"static/brands/utbt/login.png\" alt=\"UTBT Login Screen\" class=\"max-w-full rounded-lg shadow-md mb-4 mt-4 mx-auto\"><p class=\"text-warning font-semibold text-center mb-6\">Please ensure you keep your token secure and avoid sharing it with others.</p><div class=\"modal-action justify-center\"><form method=\"dialog\"><button class=\"btn btn-primary\">Got it!</button></form></div></div><form method=\"dialog\" class=\"modal-backdrop\"><button>close</button></form></dialog>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

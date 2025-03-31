@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/joho/godotenv"
 )
 
 // Config holds all configuration for the application
@@ -20,10 +22,16 @@ type Config struct {
 
 	CookieDomain string
 	LogDir       string
+
+	DatabaseURL string
 }
 
 // Load creates a new Config from environment variables
 func Load() (*Config, error) {
+	if err := godotenv.Load(); err != nil {
+		fmt.Printf("Warning: .env file not found: %v\n", err)
+	}
+
 	cfg := &Config{
 		Port:        getEnvOrDefault("PORT", "8080"),
 		Environment: getEnvOrDefault("ENV", "development"),
@@ -31,11 +39,13 @@ func Load() (*Config, error) {
 
 		SupabaseURL:        os.Getenv("SUPABASE_URL"),
 		SupabaseInstance:   os.Getenv("SUPABASE_INSTANCE"),
-		SupabaseServiceKey: os.Getenv("SUPABASE_SERVICE_ROLE_KEY"),
+		SupabaseServiceKey: os.Getenv("SUPABASE_SERVICE_KEY"),
 		SupabaseJWTSecret:  os.Getenv("SUPABASE_JWT_SECRET"),
 
 		CookieDomain: getCookieDomain(getEnvOrDefault("ENV", "development")),
 		LogDir:       getEnvOrDefault("LOG_DIR", filepath.Join(".", "logs")),
+
+		DatabaseURL: os.Getenv("DATABASE_URL"),
 	}
 
 	if err := cfg.Validate(); err != nil {
@@ -56,7 +66,7 @@ func (c *Config) Validate() error {
 		missingVars = append(missingVars, "SUPABASE_INSTANCE")
 	}
 	if c.SupabaseServiceKey == "" {
-		missingVars = append(missingVars, "SUPABASE_SERVICE_ROLE_KEY")
+		missingVars = append(missingVars, "SUPABASE_SERVICE_KEY")
 	}
 	if c.SupabaseJWTSecret == "" {
 		missingVars = append(missingVars, "SUPABASE_JWT_SECRET")
@@ -66,6 +76,9 @@ func (c *Config) Validate() error {
 	}
 	if c.Port == "" {
 		missingVars = append(missingVars, "PORT")
+	}
+	if c.DatabaseURL == "" {
+		missingVars = append(missingVars, "DATABASE_URL")
 	}
 
 	if len(missingVars) > 0 {
