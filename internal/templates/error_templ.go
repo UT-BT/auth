@@ -8,7 +8,9 @@ package templates
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-func Error() templ.Component {
+import "github.com/UT-BT/auth/internal/errors"
+
+func Error(errorMessage string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -41,7 +43,20 @@ func Error() templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"text-error\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-16 h-16\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z\"></path></svg></div><h1 class=\"text-3xl font-bold\">Authentication Error</h1><div id=\"error-message\" class=\"text-base-content/70\"><!-- Error messages will be populated by JavaScript --></div><div class=\"w-full\"><a href=\"/\" class=\"btn btn-primary w-full shadow-md hover:shadow-lg transition-all duration-200\">Try Again</a></div><script>\n            const errorMessages = {\n                'auth_storage_failed': 'Failed to store authentication data. Please try logging in again.',\n                'no_auth_data': 'No authentication data was received. Please try logging in again.',\n                'default': 'An unexpected error occurred. Please try logging in again.'\n            };\n\n            window.addEventListener('DOMContentLoaded', () => {\n                const urlParams = new URLSearchParams(window.location.search);\n                const errorCode = urlParams.get('error');\n                const errorMessageElement = document.getElementById('error-message');\n                \n                errorMessageElement.textContent = errorMessages[errorCode] || errorMessages.default;\n            });\n        </script>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"text-error\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-16 h-16\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z\"></path></svg></div><h1 class=\"text-3xl font-bold\">Error</h1><div id=\"error-message\" class=\"text-base-content/70\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var3 string
+			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(errors.GetErrorMessage(errorMessage))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/error.templ`, Line: 14, Col: 50}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div><div class=\"w-full\"><a href=\"/\" class=\"btn btn-primary w-full shadow-md hover:shadow-lg transition-all duration-200\">Try Again</a></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
