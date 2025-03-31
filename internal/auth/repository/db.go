@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog/log"
 )
@@ -22,6 +23,8 @@ func NewDBPool(connectionString string) (*DBPool, error) {
 
 	config.MaxConns = 10
 	config.MinConns = 2
+
+	config.ConnConfig.DefaultQueryExecMode = pgx.QueryExecModeCacheDescribe
 
 	pool, err := pgxpool.NewWithConfig(context.Background(), config)
 	if err != nil {
