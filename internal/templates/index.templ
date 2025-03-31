@@ -60,13 +60,15 @@ templ Index(user *models.User) {
             </div>
             <h1 class="text-3xl font-bold">Welcome, {user.Username}!</h1>
             <div class="w-full flex justify-center">
+                if user.RegisteredHWID != "" {
                 <button
-                    class="btn btn-ghost btn-sm"
-                    onclick="this.textContent = this.textContent === 'Show Hardware ID' ? this.getAttribute('data-hwid') : 'Show Hardware ID'"
-                    data-hwid={user.RegisteredHWID}
-                >
-                    Show Hardware ID
-                </button>
+                        class="btn btn-ghost btn-sm"
+                        onclick="this.textContent = this.textContent === 'Show Hardware ID' ? this.getAttribute('data-hwid') : 'Show Hardware ID'"
+                        data-hwid={user.RegisteredHWID}
+                    >
+                        Show Hardware ID
+                    </button>
+                }
             </div>
             <div class="w-full flex flex-col items-center space-y-4">
                 if user.RegisteredHWID != "" && user.GameToken != "" {
