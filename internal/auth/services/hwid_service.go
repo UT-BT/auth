@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"regexp"
 
 	"github.com/UT-BT/auth/internal/auth/models"
 	"github.com/UT-BT/auth/internal/auth/repository"
@@ -12,6 +13,7 @@ import (
 type HWIDService interface {
 	RegisterHWID(user *models.User, hwid string) (*models.RegisteredHWID, bool, error)
 	GetRegisteredHWID(userID string) (*models.RegisteredHWID, error)
+	ValidateHWID(hwid string) error
 }
 
 type hwidService struct {
@@ -75,4 +77,21 @@ func (s *hwidService) GetRegisteredHWID(userID string) (*models.RegisteredHWID, 
 
 	log.Debug().Str("user_id", userID).Str("hwid", hwid.HWID).Msg("Successfully retrieved registered HWID")
 	return hwid, nil
+}
+
+func (s *hwidService) ValidateHWID(hwid string) error {
+	if len(hwid) != 32 {
+		return fmt.Errorf("invalid HWID length")
+	}
+
+	match, err := regexp.MatchString("^[0-9A-Z]+$", hwid)
+	if err != nil {
+		return fmt.Errorf("failed to validate HWID: %w", err)
+	}
+
+	if !match {
+		return fmt.Errorf("invalid HWID characters")
+	}
+
+	return nil
 }
