@@ -79,7 +79,7 @@ func main() {
 	cookieManager := auth.NewCookieManager(cfg)
 	hwidRepository := repository.NewHWIDRepository(cfg.SupabaseURL, cfg.SupabaseServiceKey)
 	hwidService := services.NewHWIDService(hwidRepository)
-	authHandler := handlers.NewAuthHandler(authClient, cookieManager, hwidService)
+	authHandler := handlers.NewAuthHandler(authClient, cookieManager, hwidService, cfg)
 	r.Mount("/", authHandler.Routes())
 	log.Debug().Msg("Routes mounted")
 

@@ -51,6 +51,13 @@ templ Index(user *models.User) {
                     <img src={user.AvatarURL} alt={user.Username + "'s avatar"} class="rounded-full" />
                 </div>
             </div>
+            <div>
+                <div class="flex flex-wrap gap-2 justify-center">
+                    for _, role := range user.Roles {
+                        <div class="badge badge-primary">{role}</div>
+                    }
+                </div>
+            </div>
             <h1 class="text-3xl font-bold">Welcome, {user.Username}!</h1>
             <div class="w-full flex justify-center">
                 <button

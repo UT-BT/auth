@@ -16,6 +16,7 @@ type Config struct {
 	SupabaseURL        string
 	SupabaseInstance   string
 	SupabaseServiceKey string
+	SupabaseJWTSecret  string
 
 	CookieDomain string
 	LogDir       string
@@ -31,6 +32,7 @@ func Load() (*Config, error) {
 		SupabaseURL:        os.Getenv("SUPABASE_URL"),
 		SupabaseInstance:   os.Getenv("SUPABASE_INSTANCE"),
 		SupabaseServiceKey: os.Getenv("SUPABASE_SERVICE_ROLE_KEY"),
+		SupabaseJWTSecret:  os.Getenv("SUPABASE_JWT_SECRET"),
 
 		CookieDomain: getCookieDomain(getEnvOrDefault("ENV", "development")),
 		LogDir:       getEnvOrDefault("LOG_DIR", filepath.Join(".", "logs")),
@@ -55,6 +57,9 @@ func (c *Config) Validate() error {
 	}
 	if c.SupabaseServiceKey == "" {
 		missingVars = append(missingVars, "SUPABASE_SERVICE_ROLE_KEY")
+	}
+	if c.SupabaseJWTSecret == "" {
+		missingVars = append(missingVars, "SUPABASE_JWT_SECRET")
 	}
 	if c.AppURL == "" {
 		missingVars = append(missingVars, "APP_URL")
