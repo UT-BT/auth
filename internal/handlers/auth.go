@@ -223,36 +223,43 @@ func (h *AuthHandler) getUserFromCookies(w http.ResponseWriter, r *http.Request)
 
 			supabaseUser, err := h.authClient.GetUserFromToken(accessToken)
 			if err != nil {
-				log.Error().Err(err).Msg("Failed to get user data for role timestamp check")
+				log.Error().Err(err).Msg("Failed to get user data for metadata timestamp check")
 				return nil, err
 			}
 
-			currentTimestamp := int64(0)
+			currentRolesTimestamp := int64(0)
+			currentHWIDTimestamp := int64(0)
 			if supabaseUser.AppMetadata != nil {
 				if timestamp, ok := supabaseUser.AppMetadata["roles_updated_at"].(float64); ok {
-					currentTimestamp = int64(timestamp)
+					currentRolesTimestamp = int64(timestamp)
+				}
+				if timestamp, ok := supabaseUser.AppMetadata["hwid_updated_at"].(float64); ok {
+					currentHWIDTimestamp = int64(timestamp)
 				}
 			}
 
-			if currentTimestamp > claims.AppMetadata.RolesUpdatedAt {
+			if currentRolesTimestamp > claims.AppMetadata.RolesUpdatedAt ||
+				currentHWIDTimestamp > claims.AppMetadata.HWIDUpdatedAt {
 				log.Info().
 					Str("user_id", supabaseUser.ID.String()).
-					Int64("token_timestamp", claims.AppMetadata.RolesUpdatedAt).
-					Int64("current_timestamp", currentTimestamp).
-					Msg("Roles have been updated, refreshing token")
+					Int64("token_roles_timestamp", claims.AppMetadata.RolesUpdatedAt).
+					Int64("current_roles_timestamp", currentRolesTimestamp).
+					Int64("token_hwid_timestamp", claims.AppMetadata.HWIDUpdatedAt).
+					Int64("current_hwid_timestamp", currentHWIDTimestamp).
+					Msg("User metadata has been updated, refreshing token")
 
 				refreshToken, refreshErr := h.cookieManager.GetRefreshToken(r)
 				if refreshErr != nil {
-					log.Error().Err(refreshErr).Msg("Failed to get refresh token for role update")
+					log.Error().Err(refreshErr).Msg("Failed to get refresh token for metadata update")
 					h.cookieManager.ClearAllAuthCookies(w)
-					return nil, errors.New("roles have been updated, please re-authenticate")
+					return nil, errors.New("user metadata has been updated, please re-authenticate")
 				}
 
 				newToken, refreshErr := h.authClient.RefreshToken(refreshToken)
 				if refreshErr != nil {
-					log.Error().Err(refreshErr).Msg("Failed to refresh token for role update")
+					log.Error().Err(refreshErr).Msg("Failed to refresh token for metadata update")
 					h.cookieManager.ClearAllAuthCookies(w)
-					return nil, errors.New("roles have been updated, please re-authenticate")
+					return nil, errors.New("user metadata has been updated, please re-authenticate")
 				}
 
 				h.cookieManager.SetAuthCookies(w, newToken)
@@ -262,6 +269,24 @@ func (h *AuthHandler) getUserFromCookies(w http.ResponseWriter, r *http.Request)
 				if err != nil {
 					log.Error().Err(err).Msg("Failed to get updated user data after token refresh")
 					return nil, err
+				}
+
+				token, err = jwt.ParseWithClaims(accessToken, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
+					if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+						return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+					}
+					return []byte(h.cfg.SupabaseJWTSecret), nil
+				})
+
+				if err != nil || !token.Valid {
+					log.Error().Err(err).Msg("Failed to parse refreshed token")
+					return nil, errors.New("failed to parse refreshed token")
+				}
+
+				claims, ok = token.Claims.(*CustomClaims)
+				if !ok {
+					log.Error().Msg("Failed to parse claims from refreshed token")
+					return nil, errors.New("failed to parse claims from refreshed token")
 				}
 			}
 
