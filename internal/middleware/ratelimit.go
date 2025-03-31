@@ -76,6 +76,24 @@ func getEndpointGroup(path string) string {
 	}
 }
 
+func getRealIP(r *http.Request) string {
+	if ip := r.Header.Get("X-Real-IP"); ip != "" {
+		return ip
+	}
+
+	if forwardedFor := r.Header.Get("X-Forwarded-For"); forwardedFor != "" {
+		if i := strings.Index(forwardedFor, ","); i != -1 {
+			return strings.TrimSpace(forwardedFor[:i])
+		}
+		return strings.TrimSpace(forwardedFor)
+	}
+
+	if i := strings.LastIndex(r.RemoteAddr, ":"); i != -1 {
+		return r.RemoteAddr[:i]
+	}
+	return r.RemoteAddr
+}
+
 func (rl *RateLimiter) cleanupLoop() {
 	ticker := time.NewTicker(time.Minute)
 	defer ticker.Stop()
@@ -99,7 +117,7 @@ func (rl *RateLimiter) cleanup() {
 
 func (rl *RateLimiter) RateLimit(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ip := r.RemoteAddr
+		ip := getRealIP(r)
 		group := getEndpointGroup(r.URL.Path)
 		key := ip + ":" + group
 
