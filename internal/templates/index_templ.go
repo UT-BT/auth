@@ -10,6 +10,7 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"github.com/UT-BT/auth/internal/auth/models"
+	"github.com/UT-BT/auth/internal/templates/components"
 )
 
 func Index(user *models.User) templ.Component {
@@ -46,7 +47,7 @@ func Index(user *models.User) templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"utbt-logo\"><div class=\"w-24 rounded-full gradient-ring\"><img src=\"/static/brands/utbt/utbt-circle-animated.gif\" alt=\"UTBT Logo\" class=\"rounded-full\"></div></div><h1 class=\"text-3xl font-bold\">Welcome to UTBT</h1><div class=\"w-full\"><a href=\"/discord\" class=\"btn btn-primary w-[75%] shadow-md hover:shadow-lg transition-all duration-200\"><svg class=\"w-6 h-6 mr-2\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M20.317 4.492c-1.53-.69-3.17-1.2-4.885-1.49a.075.075 0 0 0-.079.036c-.21.369-.444.85-.608 1.23a18.566 18.566 0 0 0-5.487 0 12.36 12.36 0 0 0-.617-1.23A.077.077 0 0 0 8.562 3c-1.714.29-3.354.8-4.885 1.491a.07.07 0 0 0-.032.027C.533 9.093-.32 13.555.099 17.961a.08.08 0 0 0 .031.055 20.03 20.03 0 0 0 5.993 2.98.078.078 0 0 0 .084-.026 13.83 13.83 0 0 0 1.226-1.963.074.074 0 0 0-.041-.104 13.175 13.175 0 0 1-1.872-.878.075.075 0 0 1-.008-.125c.126-.093.252-.19.372-.287a.075.075 0 0 1 .078-.01c3.927 1.764 8.18 1.764 12.061 0a.075.075 0 0 1 .079.009c.12.098.245.195.372.288a.075.075 0 0 1-.006.125c-.598.344-1.22.635-1.873.877a.075.075 0 0 0-.041.105c.36.687.772 1.341 1.225 1.962a.077.077 0 0 0 .084.028 19.963 19.963 0 0 0 6.002-2.981.076.076 0 0 0 .032-.054c.5-5.094-.838-9.52-3.549-13.442a.06.06 0 0 0-.031-.028zM8.02 15.278c-1.182 0-2.157-1.069-2.157-2.38 0-1.312.956-2.38 2.157-2.38 1.21 0 2.176 1.077 2.157 2.38 0 1.312-.956 2.38-2.157 2.38zm7.975 0c-1.183 0-2.157-1.069-2.157-2.38 0-1.312.955-2.38 2.157-2.38 1.21 0 2.176 1.077 2.157 2.38 0 1.312-.946 2.38-2.157 2.38z\"></path></svg> Login with Discord</a></div>")
+				templ_7745c5c3_Err = components.Login().Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -69,133 +70,15 @@ func Index(user *models.User) templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div id=\"gameTokenData\" data-game-token=\"")
+				templ_7745c5c3_Err = components.UserProfile(user).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var4 string
-				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(user.GameToken)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/index.templ`, Line: 30, Col: 48}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, " ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" style=\"display: none;\"></div><script>\r\n                window.copyToClipboard = function() {\r\n                    const gameToken = document.getElementById('gameTokenData').getAttribute('data-game-token');\r\n                    navigator.clipboard.writeText(gameToken).then(function() {\r\n                        const modal = document.getElementById('instructionModal');\r\n                        if (modal) {\r\n                            modal.showModal();\r\n                        } else {\r\n                            console.error('Instruction modal element not found');\r\n                            alert('Game token copied, but instructions could not be shown. Please try again later.');\r\n                        }\r\n                    }, function(err) {\r\n                        alert('Failed to copy game token. Please try again later.');\r\n                    });\r\n                }\r\n            </script> <div class=\"avatar\"><div class=\"w-24 rounded-full gradient-ring\"><img src=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var5 string
-				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(user.AvatarURL)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/index.templ`, Line: 51, Col: 44}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\" alt=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var6 string
-				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(user.Username + "'s avatar")
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/index.templ`, Line: 51, Col: 78}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\" class=\"rounded-full\"></div></div><div><div class=\"flex flex-wrap gap-2 justify-center\">")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				for _, role := range user.Roles {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<div class=\"badge badge-primary\">")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var7 string
-					templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(role)
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/index.templ`, Line: 57, Col: 62}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</div>")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</div></div><h1 class=\"text-3xl font-bold\">Welcome, ")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var8 string
-				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(user.Username)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/index.templ`, Line: 61, Col: 66}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "!</h1><div class=\"w-full flex justify-center\">")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				if user.RegisteredHWID != "" {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<button class=\"btn btn-ghost btn-sm\" onclick=\"this.textContent = this.textContent === &#39;Show Hardware ID&#39; ? this.getAttribute(&#39;data-hwid&#39;) : &#39;Show Hardware ID&#39;\" data-hwid=\"")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var9 string
-					templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(user.RegisteredHWID)
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/index.templ`, Line: 67, Col: 54}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\">Show Hardware ID</button>")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</div><div class=\"w-full flex flex-col items-center space-y-4\">")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				if user.RegisteredHWID != "" && user.GameToken != "" {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<button class=\"btn btn-utbt-blue w-[75%] shadow-md hover:shadow-lg transition-all duration-200\" onclick=\"window.copyToClipboard()\">Copy Game Server Token</button> ")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-				} else {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<div class=\"tooltip-container w-[75%]\"><button class=\"btn btn-utbt-blue w-full shadow-md opacity-50 cursor-not-allowed\" disabled id=\"gameTokenButton\" game-token=\"")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var10 string
-					templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(user.GameToken)
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/index.templ`, Line: 87, Col: 55}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\">Copy Game Server Token</button> <span class=\"tooltip-text\">Open the login page from your game in order to get your game token!</span></div>")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<a href=\"/logout\" class=\"btn btn-utbt-red w-[75%] shadow-md hover:shadow-lg transition-all duration-200\">Logout</a></div><dialog id=\"instructionModal\" class=\"modal\"><div class=\"modal-box max-w-3xl\"><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form><h2 class=\"text-xl font-semibold text-base-content mb-4\">Instructions</h2><p class=\"text-base-content/80 mb-4\"><b>Your token has been copied to your clipboard.</b><br><br>To complete the authentication, please head back into your Unreal Tournament client and follow these steps:<ul class=\"list-disc list-inside ml-4 space-y-1 my-4\"><li>Connect to a UTBT server and wait for the login screen.</li><li>Click <b>Paste Token</b>.</li><li>Click <b>Reconnect</b>.</li></ul></p><div class=\"divider my-4\"></div><img src=\"static/brands/utbt/login.png\" alt=\"UTBT Login Screen\" class=\"max-w-full rounded-lg shadow-md mb-4 mt-4 mx-auto\"><p class=\"text-warning font-semibold text-center mb-6\">Please ensure you keep your token secure and avoid sharing it with others.</p><div class=\"modal-action justify-center\"><form method=\"dialog\"><button class=\"btn btn-primary\">Got it!</button></form></div></div><form method=\"dialog\" class=\"modal-backdrop\"><button>close</button></form></dialog>")
+				templ_7745c5c3_Err = components.InstructionModal().Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

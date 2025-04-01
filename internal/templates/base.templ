@@ -2,7 +2,7 @@ package templates
 
 templ Base(title string) {
     <!DOCTYPE html>
-    <html lang="en">
+    <html lang="en" data-theme="dark">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -12,13 +12,13 @@ templ Base(title string) {
         <link href="https://cdn.jsdelivr.net/npm/daisyui@4.7.2/dist/full.min.css" rel="stylesheet" type="text/css" />
         <link rel="stylesheet" href="/static/styles/styles.css">
     </head>
-    <body class="min-h-screen bg-base-200 flex items-center justify-center p-4">
-        <div class="card w-full sm:w-[450px] xl:w-[30rem] 2xl:w-[35rem] bg-base-100 shadow-xl">
-            <div class="card-body items-center text-center space-y-4">
+    <body class="min-h-screen bg-gradient-to-b from-base-300 to-base-200 flex items-center justify-center p-4">
+        <div class="w-full sm:w-[450px] xl:w-[32rem] 2xl:w-[40rem] bg-base-100 shadow-2xl border border-base-300 rounded-xl">
+            <div class="p-6 items-center text-center space-y-4">
                 { children... }
             </div>
         </div>
-        <footer class="absolute bottom-4 left-0 right-0 text-center text-sm text-gray-500">
+        <footer class="absolute bottom-4 left-0 right-0 text-center text-sm text-base-content/70 transition-all duration-300">
             <div> 
                 if IsDevVersion(Version) {
                     <span class="utbt-red">{ Version }</span>
@@ -26,10 +26,10 @@ templ Base(title string) {
                     <span class="utbt-blue">v{ Version }</span>
                 }
             </div>
-            <div>
-                <b>Made with 💖 - © UTBT.net</b>
+            <div class="flex items-center justify-center gap-1 mt-1">
+                <span class="font-bold">UTBT.net</span>
             </div>
         </footer>
     </body>
     </html>
-} 
+}

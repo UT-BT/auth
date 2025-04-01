@@ -29,7 +29,7 @@ func Base(title string) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>UTBT.net - ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"en\" data-theme=\"dark\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>UTBT.net - ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -42,7 +42,7 @@ func Base(title string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</title><script src=\"https://unpkg.com/htmx.org@1.9.10\"></script><script src=\"https://cdn.tailwindcss.com\"></script><link href=\"https://cdn.jsdelivr.net/npm/daisyui@4.7.2/dist/full.min.css\" rel=\"stylesheet\" type=\"text/css\"><link rel=\"stylesheet\" href=\"/static/styles/styles.css\"></head><body class=\"min-h-screen bg-base-200 flex items-center justify-center p-4\"><div class=\"card w-full sm:w-[450px] xl:w-[30rem] 2xl:w-[35rem] bg-base-100 shadow-xl\"><div class=\"card-body items-center text-center space-y-4\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</title><script src=\"https://unpkg.com/htmx.org@1.9.10\"></script><script src=\"https://cdn.tailwindcss.com\"></script><link href=\"https://cdn.jsdelivr.net/npm/daisyui@4.7.2/dist/full.min.css\" rel=\"stylesheet\" type=\"text/css\"><link rel=\"stylesheet\" href=\"/static/styles/styles.css\"></head><body class=\"min-h-screen bg-gradient-to-b from-base-300 to-base-200 flex items-center justify-center p-4\"><div class=\"w-full sm:w-[450px] xl:w-[32rem] 2xl:w-[40rem] bg-base-100 shadow-2xl border border-base-300 rounded-xl\"><div class=\"p-6 items-center text-center space-y-4\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -50,7 +50,7 @@ func Base(title string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div></div><footer class=\"absolute bottom-4 left-0 right-0 text-center text-sm text-gray-500\"><div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div></div><footer class=\"absolute bottom-4 left-0 right-0 text-center text-sm text-base-content/70 transition-all duration-300\"><div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -91,7 +91,7 @@ func Base(title string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</div><div><b>Made with 💖 - © UTBT.net</b></div></footer></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</div><div class=\"flex items-center justify-center gap-1 mt-1\"><span class=\"font-bold\">UTBT.net</span></div></footer></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

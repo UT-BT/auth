@@ -51,6 +51,8 @@ func (h *AuthHandler) Routes() chi.Router {
 		r.Get("/verify", h.verifyToken)
 		r.Post("/logout", h.logout)
 		r.Post("/store-auth", h.storeAuth)
+		r.Get("/hwid", h.getHWID)
+		r.Get("/game-token", h.getGameToken)
 	})
 
 	return r
@@ -634,4 +636,39 @@ func (h *AuthHandler) refreshTokenIfNeeded(w http.ResponseWriter, r *http.Reques
 		TokenRefreshed: true,
 		AccessToken:    newToken.AccessToken,
 	})
+}
+
+func (h *AuthHandler) getHWID(w http.ResponseWriter, r *http.Request) {
+	const hwidDisplayText = "• • • • • • • • • • • •"
+
+	user, err := h.getUserFromCookies(w, r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if user.RegisteredHWID == "" {
+		w.Write([]byte(hwidDisplayText))
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.Write([]byte(user.RegisteredHWID))
+}
+
+func (h *AuthHandler) getGameToken(w http.ResponseWriter, r *http.Request) {
+	user, err := h.getUserFromCookies(w, r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if user.GameToken == "" {
+		http.Error(w, "No game token found", http.StatusNotFound)
+		return
+	}
+
+	triggerData := fmt.Sprintf(`{"showModal": {"token": "%s"}}`, user.GameToken)
+	w.Header().Set("HX-Trigger", triggerData)
+	w.WriteHeader(http.StatusOK)
 }
