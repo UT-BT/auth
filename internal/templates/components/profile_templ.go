@@ -76,14 +76,14 @@ func UserProfile(user *models.User) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<script>\n        htmx.on('showModal', function() {\n            const modal = document.getElementById('instructionModal');\n            if (modal) modal.showModal();\n        });\n    </script><div class=\"flex flex-col items-center justify-center w-full lg:w-[75%] mx-auto gap-4\"><div class=\"flex flex-col items-center\"><div class=\"avatar\"><div class=\"w-28 h-28 rounded-full gradient-ring p-1 shadow-lg\"><img src=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<script>\n        htmx.on('showModal', function(event) {\n            const modal = document.getElementById('instructionModal');\n            if (modal) {\n                // Get the token from the event detail\n                let token = '';\n                \n                if (event.detail && event.detail.token) {\n                    token = event.detail.token;\n                    console.log(\"Token received in event:\", token);\n                }\n                \n                // Set up a function to copy to clipboard\n                const copyToClipboard = async () => {\n                    if (!token) {\n                        console.error(\"No token available to copy\");\n                        return;\n                    }\n                    \n                    try {\n                        await navigator.clipboard.writeText(token);\n                    } catch (err) {\n                        console.error('Failed to copy token:', err);\n                        \n                        const alertDiv = document.createElement('div');\n                        alertDiv.className = 'alert alert-warning mb-4 flex justify-center items-center flex-col';\n                        alertDiv.innerHTML = `\n                            <span>Unable to copy automatically. Please copy this token manually:</span>\n                            <div class=\"bg-base-300 p-2 my-2 rounded font-mono text-sm overflow-auto w-full\">${token}</div>\n                        `;\n                        \n                        const warningAlert = modal.querySelector('.alert-warning');\n                        if (warningAlert && warningAlert.parentNode) {\n                            warningAlert.parentNode.insertBefore(alertDiv, warningAlert);\n                        }\n                    }\n                };\n                \n                copyToClipboard();\n                modal.showModal();\n            }\n        });\n    </script><div class=\"flex flex-col items-center justify-center w-full lg:w-[75%] mx-auto gap-4\"><div class=\"flex flex-col items-center\"><div class=\"avatar\"><div class=\"w-28 h-28 rounded-full gradient-ring p-1 shadow-lg\"><img src=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(user.AvatarURL)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/components/profile.templ`, Line: 63, Col: 44}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/components/profile.templ`, Line: 100, Col: 44}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -96,7 +96,7 @@ func UserProfile(user *models.User) templ.Component {
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(user.Username + "'s avatar")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/components/profile.templ`, Line: 63, Col: 78}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/components/profile.templ`, Line: 100, Col: 78}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
@@ -109,7 +109,7 @@ func UserProfile(user *models.User) templ.Component {
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(user.Username)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/components/profile.templ`, Line: 68, Col: 34}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/components/profile.templ`, Line: 105, Col: 34}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
@@ -122,7 +122,7 @@ func UserProfile(user *models.User) templ.Component {
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(user.Roles)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/components/profile.templ`, Line: 78, Col: 83}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/components/profile.templ`, Line: 115, Col: 83}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -168,7 +168,7 @@ func UserProfile(user *models.User) templ.Component {
 			var templ_7745c5c3_Var8 string
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(getRoleDescription(role))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/components/profile.templ`, Line: 97, Col: 147}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/components/profile.templ`, Line: 134, Col: 147}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
@@ -181,7 +181,7 @@ func UserProfile(user *models.User) templ.Component {
 			var templ_7745c5c3_Var9 string
 			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(formatRoleName(role))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/components/profile.templ`, Line: 101, Col: 51}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/components/profile.templ`, Line: 138, Col: 51}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {

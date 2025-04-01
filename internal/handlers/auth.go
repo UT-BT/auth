@@ -12,7 +12,6 @@ import (
 	"github.com/UT-BT/auth/internal/auth/services"
 	"github.com/UT-BT/auth/internal/config"
 	"github.com/UT-BT/auth/internal/templates"
-	"github.com/atotto/clipboard"
 	"github.com/golang-jwt/jwt/v5"
 	supabasetypes "github.com/supabase-community/auth-go/types"
 
@@ -668,15 +667,7 @@ func (h *AuthHandler) getGameToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := clipboard.WriteAll(user.GameToken); err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{
-			"status": "fallback",
-			"token":  user.GameToken,
-		})
-		return
-	}
-
-	w.Header().Set("HX-Trigger", "showModal")
+	triggerData := fmt.Sprintf(`{"showModal": {"token": "%s"}}`, user.GameToken)
+	w.Header().Set("HX-Trigger", triggerData)
 	w.WriteHeader(http.StatusOK)
 }

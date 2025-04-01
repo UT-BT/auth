@@ -51,9 +51,43 @@ func formatRoleName(role string) string {
 
 templ UserProfile(user *models.User) {
     <script>
-        htmx.on('showModal', function() {
+        htmx.on('showModal', function(event) {
             const modal = document.getElementById('instructionModal');
-            if (modal) modal.showModal();
+            if (modal) {
+                let token = '';
+                
+                if (event.detail && event.detail.token) {
+                    token = event.detail.token;
+                }
+                
+                const copyToClipboard = async () => {
+                    if (!token) {
+                        console.error("No token available to copy");
+                        return;
+                    }
+                    
+                    try {
+                        await navigator.clipboard.writeText(token);
+                    } catch (err) {
+                        console.error('Failed to copy token:', err);
+                        
+                        const alertDiv = document.createElement('div');
+                        alertDiv.className = 'alert alert-warning mb-4 flex justify-center items-center flex-col';
+                        alertDiv.innerHTML = `
+                            <span>Unable to copy automatically. Please copy this token manually:</span>
+                            <div class="bg-base-300 p-2 my-2 rounded font-mono text-sm overflow-auto w-full">${token}</div>
+                        `;
+                        
+                        const warningAlert = modal.querySelector('.alert-warning');
+                        if (warningAlert && warningAlert.parentNode) {
+                            warningAlert.parentNode.insertBefore(alertDiv, warningAlert);
+                        }
+                    }
+                };
+                
+                copyToClipboard();
+                modal.showModal();
+            }
         });
     </script>
     <div class="flex flex-col items-center justify-center w-full lg:w-[75%] mx-auto gap-4">
