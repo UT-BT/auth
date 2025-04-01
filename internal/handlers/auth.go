@@ -12,6 +12,7 @@ import (
 	"github.com/UT-BT/auth/internal/auth/services"
 	"github.com/UT-BT/auth/internal/config"
 	"github.com/UT-BT/auth/internal/templates"
+	"github.com/atotto/clipboard"
 	"github.com/golang-jwt/jwt/v5"
 	supabasetypes "github.com/supabase-community/auth-go/types"
 
@@ -51,6 +52,8 @@ func (h *AuthHandler) Routes() chi.Router {
 		r.Get("/verify", h.verifyToken)
 		r.Post("/logout", h.logout)
 		r.Post("/store-auth", h.storeAuth)
+		r.Get("/hwid", h.getHWID)
+		r.Get("/game-token", h.getGameToken)
 	})
 
 	return r
@@ -634,4 +637,46 @@ func (h *AuthHandler) refreshTokenIfNeeded(w http.ResponseWriter, r *http.Reques
 		TokenRefreshed: true,
 		AccessToken:    newToken.AccessToken,
 	})
+}
+
+func (h *AuthHandler) getHWID(w http.ResponseWriter, r *http.Request) {
+	const hwidDisplayText = "• • • • • • • • • • • •"
+
+	user, err := h.getUserFromCookies(w, r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if user.RegisteredHWID == "" {
+		w.Write([]byte(hwidDisplayText))
+		return
+	}
+
+	w.Write([]byte(user.RegisteredHWID))
+}
+
+func (h *AuthHandler) getGameToken(w http.ResponseWriter, r *http.Request) {
+	user, err := h.getUserFromCookies(w, r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if user.GameToken == "" {
+		http.Error(w, "No game token found", http.StatusNotFound)
+		return
+	}
+
+	if err := clipboard.WriteAll(user.GameToken); err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{
+			"status": "fallback",
+			"token":  user.GameToken,
+		})
+		return
+	}
+
+	w.Header().Set("HX-Trigger", "showModal")
+	w.WriteHeader(http.StatusOK)
 }
