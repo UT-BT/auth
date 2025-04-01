@@ -652,6 +652,7 @@ func (h *AuthHandler) getHWID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Content-Type", "text/plain")
 	w.Write([]byte(user.RegisteredHWID))
 }
 
