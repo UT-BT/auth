@@ -2,7 +2,6 @@ package components
 
 import (
     "github.com/UT-BT/auth/internal/auth/models"
-    "fmt"
     "strings"
 
 )
@@ -105,19 +104,6 @@ templ UserProfile(user *models.User) {
         </div>
 
         <hr class="w-full my-2" />
-
-        <div class="stats shadow w-full bg-base-200">
-            <div class="stat">
-                <div class="stat-title">Roles</div>
-                <div class="stat-value text-lg">{fmt.Sprintf("%d", len(user.Roles))}</div>
-            </div>
-            if user.RegisteredHWID != "" {
-                <div class="stat">
-                    <div class="stat-title">Hardware ID</div>
-                    <div class="stat-value text-lg">Registered</div>
-                </div>
-            }
-        </div>
 
         <div class="w-full bg-base-200 rounded-xl shadow-md p-4">
             <h2 class="text-lg font-semibold flex items-center gap-2 justify-center mb-3">
